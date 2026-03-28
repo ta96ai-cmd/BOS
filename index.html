@@ -129,8 +129,25 @@
   .dt tr:last-child td { border-bottom: none; }
   .mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
 
-  /* MODAL */
-  .mo { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  /* MODAL OVERLAY (M2 modals) */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal-overlay .modal { background: var(--surface); border: 1px solid var(--border2); width: 100%; max-width: 510px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 21px; letter-spacing: 2px; }
+  .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 22px; line-height: 1; padding: 0 3px; transition: color 0.2s; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 13px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+  .form-group { margin-bottom: 13px; }
+  .form-label { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .form-input, .form-select { width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; padding: 8px 11px; outline: none; transition: border-color 0.2s; }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-select { appearance: none; cursor: pointer; }
+  textarea.form-input { resize: vertical; min-height: 56px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tabs-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; flex-shrink: 0; scrollbar-width: none; margin-bottom: 24px; }
+  .tabs-bar::-webkit-scrollbar { display: none; }
   .mo.open { display: flex; }
   .md { background: var(--surface); border: 1px solid var(--border2); width: 100%; max-width: 510px; max-height: 90vh; overflow-y: auto; }
   .md-hdr { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 1; }
@@ -277,7 +294,7 @@
       <span class="nav-num">01</span><span>Business Map</span>
       <span class="nav-badge nb-live">Live</span>
     </div>
-    <div class="nav-item locked" id="nav-m2"><span class="nav-num">02</span><span>Operational Workflow</span><span class="nav-badge nb-lock">P1</span></div>
+    <div class="nav-item" id="nav-m2" onclick="show('m2')"><span class="nav-num">02</span><span>Operational Workflow</span><span class="nav-badge nb-live">Live</span></div>
     <div class="nav-item locked" id="nav-m3"><span class="nav-num">03</span><span>Oversight &amp; Intel</span><span class="nav-badge nb-lock">P2</span></div>
     <div class="nav-item locked" id="nav-m4"><span class="nav-num">04</span><span>People &amp; Accountability</span><span class="nav-badge nb-lock">P3</span></div>
     <div class="nav-item locked" id="nav-m5"><span class="nav-num">05</span><span>Business Functions</span><span class="nav-badge nb-lock">P4</span></div>
@@ -308,7 +325,7 @@
           <div class="hc-desc">All master data libraries. Clients, machines, SKUs, tooling, artwork.</div>
           <span class="hc-badge hcb-live">Live</span>
         </div>
-        <div class="home-card locked-card"><div class="hc-num">02</div><div class="hc-title">Operational Workflow</div><div class="hc-desc">Order intake to delivery. Job cards, production routing, dispatch.</div><span class="hc-badge hcb-lock">Phase 1 — Locked</span></div>
+        <div class="home-card" onclick="show('m2')" style="cursor:pointer;"><div class="hc-num">02</div><div class="hc-title">Operational Workflow</div><div class="hc-desc">Order intake to delivery. Job cards, production routing, dispatch.</div><span class="hc-badge" style="background:rgba(74,222,128,0.1);color:var(--done);border:1px solid rgba(74,222,128,0.2);">Phase 1 — Live</span></div>
         <div class="home-card locked-card"><div class="hc-num">03</div><div class="hc-title">Oversight &amp; Intelligence</div><div class="hc-desc">Management dashboard. Real-time visibility, department load, metrics.</div><span class="hc-badge hcb-lock">Phase 2 — Locked</span></div>
         <div class="home-card locked-card"><div class="hc-num">04</div><div class="hc-title">People &amp; Accountability</div><div class="hc-desc">KRAs, SOPs, reporting discipline, incentive and penalty structure.</div><span class="hc-badge hcb-lock">Phase 3 — Locked</span></div>
         <div class="home-card locked-card"><div class="hc-num">05</div><div class="hc-title">Business Functions</div><div class="hc-desc">Finance, Sales, Purchases, HR — each with clear ownership.</div><span class="hc-badge hcb-lock">Phase 4 — Locked</span></div>
@@ -400,8 +417,171 @@
     </div>
   </div>
 
-  <!-- LOCKED VIEWS 2-7 -->
-  <div class="view" id="view-m2"><div class="lock-view"><div class="lock-num">02</div><div class="lock-title">Operational Workflow</div><div class="lock-desc">Locked. Complete Module 1 and confirm stable before Phase 1 begins.</div></div></div>
+  <!-- MODULE 2 — OPERATIONAL WORKFLOW -->
+  <div class="view" id="view-m2">
+    <div class="mod-header">
+      <div class="mod-hl"><span class="mod-tag">M02</span><span class="mod-title">Operational Workflow</span></div>
+      <span class="badge badge-green">● Live</span>
+    </div>
+    <div class="mod-tabs">
+        <div class="mod-tab active" id="m2tab-orders" onclick="m2tab('orders')">Orders</div>
+        <div class="mod-tab" id="m2tab-jobs" onclick="m2tab('jobs')">Job Cards</div>
+        <div class="mod-tab" id="m2tab-routing" onclick="m2tab('routing')">Routing</div>
+        <div class="mod-tab" id="m2tab-outsourced" onclick="m2tab('outsourced')">Outsourced</div>
+        <div class="mod-tab" id="m2tab-dispatch" onclick="m2tab('dispatch')">Dispatch</div>
+    </div>
+    <div class="mod-body">
+
+      <!-- ORDERS -->
+      <div id="m2-orders">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M2.1</span><h3 class="sec-title">Orders</h3></div><button class="btn btn-primary" onclick="openOrderModal('add')">+ New Order</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">orders</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Order ID</th><th>Client</th><th>Order Date</th><th>Delivery Date</th><th>Received Via</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tb-orders"><tr><td colspan="8"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- JOB CARDS -->
+      <div id="m2-jobs" style="display:none">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M2.2</span><h3 class="sec-title">Job Cards</h3></div><button class="btn btn-primary" onclick="openJobModal('add')">+ New Job Card</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">job_cards</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Order</th><th>Client</th><th>Base SKU</th><th>Qty</th><th>Due Date</th><th>Current Dept</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tb-jobs"><tr><td colspan="9"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- ROUTING -->
+      <div id="m2-routing" style="display:none">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M2.3</span><h3 class="sec-title">Job Routing</h3></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Select a job card to view or edit its production route.</div></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">job_routing</span></div>
+        <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;">
+          <select class="form-select" id="routing-job-select" style="max-width:320px;" onchange="loadRouting()"><option value="">— Select Job Card —</option></select>
+          <button class="btn btn-primary" onclick="addRouteStep()">+ Add Step</button>
+        </div>
+        <div class="tw"><table class="dt"><thead><tr><th>Step</th><th>Department</th><th>Assigned To</th><th>Status</th><th>Started</th><th>Completed</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="tb-routing"><tr><td colspan="8"><div class="empty">Select a job card above to view routing.</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- OUTSOURCED -->
+      <div id="m2-outsourced" style="display:none">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M2.5</span><h3 class="sec-title">Outsourced Jobs</h3></div><button class="btn btn-primary" onclick="openOutModal('add')">+ Add Outsourced</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">outsourced_jobs</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Process</th><th>Vendor</th><th>Sent Date</th><th>Expected Back</th><th>Actual Back</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tb-out"><tr><td colspan="8"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- DISPATCH -->
+      <div id="m2-dispatch" style="display:none">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M2.6</span><h3 class="sec-title">Dispatch</h3></div><button class="btn btn-primary" onclick="openDispModal('add')">+ New Dispatch</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">dispatches</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Dispatch ID</th><th>Client</th><th>Dispatch Date</th><th>Mode</th><th>Tracking</th><th>Invoice</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tb-disp"><tr><td colspan="8"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ORDER MODAL -->
+  <div class="modal-overlay" id="mo-order">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title" id="mo-order-t">New Order</span><button class="modal-close" onclick="X('mo-order')">×</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ord-id"/>
+        <div class="form-row"><div class="form-group"><label class="form-label">Order ID *</label><input class="form-input" id="ord-code" placeholder="ORD-2026-001"/></div><div class="form-group"><label class="form-label">Order Type</label><select class="form-select" id="ord-type"><option value="new">New</option><option value="repeat">Repeat</option></select></div></div>
+        <div class="form-group"><label class="form-label">Client *</label><select class="form-select" id="ord-client"><option value="">— Select Client —</option></select></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Order Date</label><input class="form-input" id="ord-date" type="date"/></div><div class="form-group"><label class="form-label">Delivery Date</label><input class="form-input" id="ord-delivery" type="date"/></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Received Via</label><select class="form-select" id="ord-via"><option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="phone">Phone</option><option value="in-person">In Person</option></select></div><div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="ord-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option><option value="critical">Critical</option></select></div></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="ord-status"><option value="open">Open</option><option value="in_progress">In Progress</option><option value="ready">Ready</option><option value="dispatched">Dispatched</option><option value="closed">Closed</option><option value="on_hold">On Hold</option></select></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="ord-notes"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="X('mo-order')">Cancel</button><button class="btn btn-primary" onclick="saveOrder()">Save Order</button></div>
+    </div>
+  </div>
+
+  <!-- JOB CARD MODAL -->
+  <div class="modal-overlay" id="mo-job">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title" id="mo-job-t">New Job Card</span><button class="modal-close" onclick="X('mo-job')">×</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="job-id"/>
+        <div class="form-row"><div class="form-group"><label class="form-label">Job ID *</label><input class="form-input" id="job-code" placeholder="JOB-2026-001"/></div><div class="form-group"><label class="form-label">Order</label><select class="form-select" id="job-order"><option value="">— Select Order —</option></select></div></div>
+        <div class="form-group"><label class="form-label">Client *</label><select class="form-select" id="job-client"><option value="">— Select Client —</option></select></div>
+        <div class="form-group"><label class="form-label">Base SKU</label><select class="form-select" id="job-sku"><option value="">— Select SKU —</option></select></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Quantity *</label><input class="form-input" id="job-qty" type="number" placeholder="10000"/></div><div class="form-group"><label class="form-label">Size</label><input class="form-input" id="job-size" placeholder='3x4"'/></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Material</label><input class="form-input" id="job-material" placeholder="300 GSM Art Card"/></div><div class="form-group"><label class="form-label">Print Method</label><input class="form-input" id="job-print" placeholder="Offset 4C"/></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Finishing</label><input class="form-input" id="job-finishing" placeholder="Gloss Lam + Foil"/></div><div class="form-group"><label class="form-label">Fabrication</label><input class="form-input" id="job-fab" placeholder="Slit"/></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Start Date</label><input class="form-input" id="job-start" type="date"/></div><div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="job-due" type="date"/></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Artwork Status</label><select class="form-select" id="job-art-status"><option value="pending">Pending</option><option value="approved">Approved</option><option value="on_hold">On Hold</option></select></div><div class="form-group"><label class="form-label">Tooling Status</label><select class="form-select" id="job-tool-status"><option value="available">Available</option><option value="to_be_made">To Be Made</option><option value="outsourced">Outsourced</option></select></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Current Department</label><select class="form-select" id="job-dept">
+          <option value="">— Not Started —</option>
+          <option value="Prepress">Prepress</option>
+          <option value="Cutting">Cutting</option>
+          <option value="Offset Printing">Offset Printing</option>
+          <option value="Screen Printing">Screen Printing</option>
+          <option value="Digital Printing">Digital Printing</option>
+          <option value="Lamination">Lamination</option>
+          <option value="Die Punching">Die Punching</option>
+          <option value="Pasting">Pasting</option>
+          <option value="Corrugation">Corrugation</option>
+          <option value="Rigid Box Assembly">Rigid Box Assembly</option>
+          <option value="Digital Embellishment">Digital Embellishment</option>
+          <option value="Packing & Dispatch">Packing & Dispatch</option>
+        </select></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="job-status"><option value="open">Open</option><option value="in_progress">In Progress</option><option value="ready">Ready</option><option value="dispatched">Dispatched</option><option value="closed">Closed</option><option value="on_hold">On Hold</option></select></div></div>
+        <div class="form-group"><label class="form-label">Special Instructions</label><textarea class="form-input" id="job-notes"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="X('mo-job')">Cancel</button><button class="btn btn-primary" onclick="saveJob()">Save Job Card</button></div>
+    </div>
+  </div>
+
+  <!-- OUTSOURCED MODAL -->
+  <div class="modal-overlay" id="mo-out">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title" id="mo-out-t">Add Outsourced Job</span><button class="modal-close" onclick="X('mo-out')">×</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="out-id"/>
+        <div class="form-group"><label class="form-label">Job Card</label><select class="form-select" id="out-job"><option value="">— Select Job Card —</option></select></div>
+        <div class="form-group"><label class="form-label">Process *</label><input class="form-input" id="out-process" placeholder="Plate Making / Hot Foil etc."/></div>
+        <div class="form-group"><label class="form-label">Vendor *</label><input class="form-input" id="out-vendor" placeholder="Vendor name"/></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Sent Date</label><input class="form-input" id="out-sent" type="date"/></div><div class="form-group"><label class="form-label">Expected Back</label><input class="form-input" id="out-expected" type="date"/></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Actual Back</label><input class="form-input" id="out-actual" type="date"/></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="out-status"><option value="sent">Sent</option><option value="received">Received</option><option value="delayed">Delayed</option></select></div></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="out-notes"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="X('mo-out')">Cancel</button><button class="btn btn-primary" onclick="saveOut()">Save</button></div>
+    </div>
+  </div>
+
+  <!-- DISPATCH MODAL -->
+  <div class="modal-overlay" id="mo-disp">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title" id="mo-disp-t">New Dispatch</span><button class="modal-close" onclick="X('mo-disp')">×</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="disp-id"/>
+        <div class="form-row"><div class="form-group"><label class="form-label">Dispatch ID *</label><input class="form-input" id="disp-code" placeholder="DSP-2026-001"/></div><div class="form-group"><label class="form-label">Dispatch Date</label><input class="form-input" id="disp-date" type="date"/></div></div>
+        <div class="form-group"><label class="form-label">Client</label><select class="form-select" id="disp-client"><option value="">— Select Client —</option></select></div>
+        <div class="form-group"><label class="form-label">Order</label><select class="form-select" id="disp-order"><option value="">— Select Order —</option></select></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Delivery Mode</label><select class="form-select" id="disp-mode"><option value="courier">Courier</option><option value="own_vehicle">Own Vehicle</option><option value="client_pickup">Client Pickup</option></select></div><div class="form-group"><label class="form-label">Tracking Number</label><input class="form-input" id="disp-tracking" placeholder="AWB / tracking no."/></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Invoice Number</label><input class="form-input" id="disp-invoice" placeholder="INV-001"/></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="disp-status"><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="returned">Returned</option></select></div></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="disp-notes"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="X('mo-disp')">Cancel</button><button class="btn btn-primary" onclick="saveDisp()">Save Dispatch</button></div>
+    </div>
+  </div>
+
+  <!-- ROUTE STEP MODAL -->
+  <div class="modal-overlay" id="mo-route">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title" id="mo-route-t">Add Route Step</span><button class="modal-close" onclick="X('mo-route')">×</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="route-id"/>
+        <input type="hidden" id="route-job-id"/>
+        <div class="form-row"><div class="form-group"><label class="form-label">Step Number *</label><input class="form-input" id="route-step" type="number" placeholder="1"/></div><div class="form-group"><label class="form-label">Department *</label><select class="form-select" id="route-dept">
+          <option value="Prepress">Prepress</option><option value="Cutting">Cutting</option><option value="Offset Printing">Offset Printing</option><option value="Screen Printing">Screen Printing</option><option value="Digital Printing">Digital Printing</option><option value="Lamination">Lamination</option><option value="Die Punching">Die Punching</option><option value="Pasting">Pasting</option><option value="Corrugation">Corrugation</option><option value="Rigid Box Assembly">Rigid Box Assembly</option><option value="Digital Embellishment">Digital Embellishment</option><option value="Packing & Dispatch">Packing & Dispatch</option>
+        </select></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Assigned To</label><input class="form-input" id="route-assigned" placeholder="Operator name"/></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="route-status"><option value="pending">Pending</option><option value="in_progress">In Progress</option><option value="done">Done</option><option value="skipped">Skipped</option></select></div></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="route-notes"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="X('mo-route')">Cancel</button><button class="btn btn-primary" onclick="saveRoute()">Save Step</button></div>
+    </div>
+  </div>
   <div class="view" id="view-m3"><div class="lock-view"><div class="lock-num">03</div><div class="lock-title">Oversight &amp; Intelligence</div><div class="lock-desc">Locked until Phase 1 is complete and stable.</div></div></div>
   <div class="view" id="view-m4"><div class="lock-view"><div class="lock-num">04</div><div class="lock-title">People &amp; Accountability</div><div class="lock-desc">Locked until Phase 1 is stable.</div></div></div>
   <div class="view" id="view-m5"><div class="lock-view"><div class="lock-num">05</div><div class="lock-title">Business Functions</div><div class="lock-desc">Locked until Phase 2 is complete.</div></div></div>
@@ -431,6 +611,7 @@ function show(id) {
   document.getElementById('view-' + id).classList.add('active')
   const nav = document.getElementById('nav-' + id)
   if (nav) nav.classList.add('active')
+  if (id === 'm2') loadM2()
 }
 
 function tab(id) {
@@ -465,6 +646,11 @@ function O(id)  { document.getElementById(id).classList.add('open') }
 function X(id)  { document.getElementById(id).classList.remove('open') }
 document.querySelectorAll('.mo').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open') }))
 function g(id) { return (document.getElementById(id)?.value || '').trim() }
+function fS(id, data, vk, lk, sel='') {
+  const el = document.getElementById(id); if(!el) return
+  const first = el.options[0].outerHTML
+  el.innerHTML = first + data.map(r=>`<option value="${r[vk]}"${r[vk]===sel?' selected':''}>${r[lk]}</option>`).join('')
+}
 function eR(e, c) { return `<tr><td colspan="${c}"><div class="empty" style="color:var(--danger)">Error: ${e.message}</div></td></tr>` }
 function eE(m, c) { return `<tr><td colspan="${c}"><div class="empty">${m}</div></td></tr>` }
 function sb(v) {
@@ -707,6 +893,261 @@ async function saveSz(){
   const{error}=id?await db.from('size_standards').update(p).eq('id',id):await db.from('size_standards').insert(p)
   if(error){toast('Save failed: '+error.message,'error');return}
   toast(id?'Size updated':'Size added'); X('mo-sz'); loadSizes()
+}
+
+// ── MODULE 2 — OPERATIONAL WORKFLOW ──────────────────────────
+
+function m2tab(id) {
+  ['orders','jobs','routing','outsourced','dispatch'].forEach(t => {
+    document.getElementById('m2-'+t).style.display = t===id ? 'block' : 'none'
+    document.getElementById('m2tab-'+t).classList.toggle('active', t===id)
+  })
+  if(id==='orders') loadOrders()
+  if(id==='jobs') loadJobs()
+  if(id==='routing') loadJobsForRouting()
+  if(id==='outsourced') loadOutsourced()
+  if(id==='dispatch') loadDispatches()
+}
+
+async function loadM2() {
+  loadOrders()
+}
+
+// ORDERS
+async function loadOrders() {
+  const {data,error} = await db.from('orders').select('*, clients(name)').order('created_at', {ascending:false})
+  const tb = document.getElementById('tb-orders')
+  if(error){tb.innerHTML=eR(error,8);return}
+  if(!data.length){tb.innerHTML=eE('No orders yet. Click + New Order.',8);return}
+  tb.innerHTML = data.map(r=>`<tr>
+    <td class="mono">${r.order_id}</td>
+    <td>${r.clients?.name||'—'}</td>
+    <td>${r.order_date||'—'}</td>
+    <td>${r.delivery_date||'—'}</td>
+    <td><span class="badge badge-muted">${r.received_via||'—'}</span></td>
+    <td>${priBadge(r.priority)}</td>
+    <td>${stBadge(r.status)}</td>
+    <td>${acts('editOrder',r.id,'orders')}</td>
+  </tr>`).join('')
+}
+
+function priBadge(p) {
+  if(p==='critical') return `<span class="badge badge-danger">Critical</span>`
+  if(p==='urgent') return `<span class="badge badge-yellow">Urgent</span>`
+  return `<span class="badge badge-muted">Normal</span>`
+}
+
+function stBadge(s) {
+  const m = {open:'badge-accent',in_progress:'badge-yellow',ready:'badge-green',dispatched:'badge-green',closed:'badge-muted',on_hold:'badge-muted'}
+  const l = {open:'Open',in_progress:'In Progress',ready:'Ready',dispatched:'Dispatched',closed:'Closed',on_hold:'On Hold'}
+  return `<span class="badge ${m[s]||'badge-muted'}">${l[s]||s}</span>`
+}
+
+async function openOrderModal(mode, data={}) {
+  fS('ord-client', CC, 'id', 'name', data.client_id||'')
+  document.getElementById('mo-order-t').textContent = mode==='add'?'New Order':'Edit Order'
+  document.getElementById('ord-id').value = data.id||''
+  document.getElementById('ord-code').value = data.order_id||''
+  document.getElementById('ord-type').value = data.order_type||'new'
+  document.getElementById('ord-date').value = data.order_date||new Date().toISOString().split('T')[0]
+  document.getElementById('ord-delivery').value = data.delivery_date||''
+  document.getElementById('ord-via').value = data.received_via||'whatsapp'
+  document.getElementById('ord-priority').value = data.priority||'normal'
+  document.getElementById('ord-status').value = data.status||'open'
+  document.getElementById('ord-notes').value = data.notes||''
+  O('mo-order')
+}
+async function editOrder(id) { const {data}=await db.from('orders').select('*').eq('id',id).single(); openOrderModal('edit',data) }
+async function saveOrder() {
+  const id = g('ord-id')
+  const p = {order_id:g('ord-code'),client_id:g('ord-client')||null,order_type:g('ord-type'),order_date:g('ord-date')||null,delivery_date:g('ord-delivery')||null,received_via:g('ord-via'),priority:g('ord-priority'),status:g('ord-status'),notes:g('ord-notes')}
+  if(!p.order_id){toast('Order ID required','error');return}
+  const {error}=id?await db.from('orders').update(p).eq('id',id):await db.from('orders').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Order updated':'Order created'); X('mo-order'); loadOrders()
+}
+
+// JOB CARDS
+async function loadJobs() {
+  const {data,error} = await db.from('job_cards').select('*, clients(name), base_skus(name), orders(order_id)').order('created_at',{ascending:false})
+  const tb = document.getElementById('tb-jobs')
+  if(error){tb.innerHTML=eR(error,9);return}
+  if(!data.length){tb.innerHTML=eE('No job cards yet. Click + New Job Card.',9);return}
+  tb.innerHTML = data.map(r=>`<tr>
+    <td class="mono">${r.job_id}</td>
+    <td class="mono">${r.orders?.order_id||'—'}</td>
+    <td>${r.clients?.name||'—'}</td>
+    <td>${r.base_skus?.name||'—'}</td>
+    <td>${r.quantity?.toLocaleString()||'—'}</td>
+    <td>${r.due_date||'—'}</td>
+    <td>${r.current_dept?`<span class="badge badge-muted">${r.current_dept}</span>`:'—'}</td>
+    <td>${stBadge(r.status)}</td>
+    <td>${acts('editJob',r.id,'job_cards')}</td>
+  </tr>`).join('')
+}
+
+async function openJobModal(mode, data={}) {
+  fS('job-client', CC, 'id', 'name', data.client_id||'')
+  const {data:orders} = await db.from('orders').select('id,order_id').order('created_at',{ascending:false})
+  const {data:skus} = await db.from('base_skus').select('id,name').order('name').limit(100)
+  fS('job-order', orders||[], 'id', 'order_id', data.order_id||'')
+  fS('job-sku', skus||[], 'id', 'name', data.base_sku_id||'')
+  document.getElementById('mo-job-t').textContent = mode==='add'?'New Job Card':'Edit Job Card'
+  document.getElementById('job-id').value=data.id||''
+  document.getElementById('job-code').value=data.job_id||''
+  document.getElementById('job-qty').value=data.quantity||''
+  document.getElementById('job-size').value=data.size||''
+  document.getElementById('job-material').value=data.material||''
+  document.getElementById('job-print').value=data.print_method||''
+  document.getElementById('job-finishing').value=data.finishing||''
+  document.getElementById('job-fab').value=data.fabrication||''
+  document.getElementById('job-start').value=data.start_date||''
+  document.getElementById('job-due').value=data.due_date||''
+  document.getElementById('job-art-status').value=data.artwork_status||'pending'
+  document.getElementById('job-tool-status').value=data.tooling_status||'available'
+  document.getElementById('job-dept').value=data.current_dept||''
+  document.getElementById('job-status').value=data.status||'open'
+  document.getElementById('job-notes').value=data.special_instructions||''
+  O('mo-job')
+}
+async function editJob(id) { const {data}=await db.from('job_cards').select('*').eq('id',id).single(); openJobModal('edit',data) }
+async function saveJob() {
+  const id = g('job-id')
+  const p = {job_id:g('job-code'),order_id:g('job-order')||null,client_id:g('job-client')||null,base_sku_id:g('job-sku')||null,quantity:parseInt(g('job-qty'))||null,size:g('job-size'),material:g('job-material'),print_method:g('job-print'),finishing:g('job-finishing'),fabrication:g('job-fab'),start_date:g('job-start')||null,due_date:g('job-due')||null,artwork_status:g('job-art-status'),tooling_status:g('job-tool-status'),current_dept:g('job-dept')||null,status:g('job-status'),special_instructions:g('job-notes')}
+  if(!p.job_id||!p.quantity){toast('Job ID and Quantity required','error');return}
+  const {error}=id?await db.from('job_cards').update(p).eq('id',id):await db.from('job_cards').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Job card updated':'Job card created'); X('mo-job'); loadJobs()
+}
+
+// ROUTING
+async function loadJobsForRouting() {
+  const {data} = await db.from('job_cards').select('id,job_id').order('created_at',{ascending:false})
+  fS('routing-job-select', data||[], 'id', 'job_id', '')
+}
+async function loadRouting() {
+  const jobId = document.getElementById('routing-job-select').value
+  const tb = document.getElementById('tb-routing')
+  if(!jobId){tb.innerHTML=`<tr><td colspan="8"><div class="empty">Select a job card above.</div></td></tr>`;return}
+  document.getElementById('route-job-id').value = jobId
+  const {data,error} = await db.from('job_routing').select('*').eq('job_id',jobId).order('step_number')
+  if(error){tb.innerHTML=eR(error,8);return}
+  if(!data.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty">No route steps yet. Click + Add Step.</div></td></tr>`;return}
+  tb.innerHTML = data.map(r=>`<tr>
+    <td class="mono">${r.step_number}</td>
+    <td><strong>${r.department}</strong></td>
+    <td>${r.assigned_to||'—'}</td>
+    <td>${stBadge(r.status)}</td>
+    <td>${r.started_at?new Date(r.started_at).toLocaleDateString():'—'}</td>
+    <td>${r.completed_at?new Date(r.completed_at).toLocaleDateString():'—'}</td>
+    <td style="color:var(--muted2);font-size:12px;">${r.notes||'—'}</td>
+    <td>${acts('editRoute',r.id,'job_routing')}</td>
+  </tr>`).join('')
+}
+function addRouteStep() {
+  const jobId = document.getElementById('route-job-id').value
+  if(!jobId){toast('Select a job card first','error');return}
+  openRouteModal('add',{})
+}
+function openRouteModal(mode,data={}) {
+  document.getElementById('mo-route-t').textContent = mode==='add'?'Add Route Step':'Edit Route Step'
+  document.getElementById('route-id').value=data.id||''
+  document.getElementById('route-step').value=data.step_number||''
+  document.getElementById('route-dept').value=data.department||'Prepress'
+  document.getElementById('route-assigned').value=data.assigned_to||''
+  document.getElementById('route-status').value=data.status||'pending'
+  document.getElementById('route-notes').value=data.notes||''
+  O('mo-route')
+}
+async function editRoute(id) { const {data}=await db.from('job_routing').select('*').eq('id',id).single(); openRouteModal('edit',data) }
+async function saveRoute() {
+  const id = g('route-id')
+  const jobId = document.getElementById('route-job-id').value
+  const p = {job_id:jobId,step_number:parseInt(g('route-step')),department:g('route-dept'),assigned_to:g('route-assigned'),status:g('route-status'),notes:g('route-notes')}
+  if(!p.step_number||!p.department){toast('Step number and department required','error');return}
+  const {error}=id?await db.from('job_routing').update(p).eq('id',id):await db.from('job_routing').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Step updated':'Step added'); X('mo-route'); loadRouting()
+}
+
+// OUTSOURCED
+async function loadOutsourced() {
+  const {data,error} = await db.from('outsourced_jobs').select('*, job_cards(job_id)').order('created_at',{ascending:false})
+  const tb = document.getElementById('tb-out')
+  if(error){tb.innerHTML=eR(error,8);return}
+  if(!data.length){tb.innerHTML=eE('No outsourced jobs yet.',8);return}
+  tb.innerHTML = data.map(r=>`<tr>
+    <td class="mono">${r.job_cards?.job_id||'—'}</td>
+    <td>${r.process}</td><td>${r.vendor}</td>
+    <td>${r.sent_date||'—'}</td><td>${r.expected_back||'—'}</td><td>${r.actual_back||'—'}</td>
+    <td>${stBadge(r.status)}</td>
+    <td>${acts('editOut',r.id,'outsourced_jobs')}</td>
+  </tr>`).join('')
+}
+async function openOutModal(mode,data={}) {
+  const {data:jobs} = await db.from('job_cards').select('id,job_id').order('created_at',{ascending:false})
+  fS('out-job', jobs||[], 'id', 'job_id', data.job_id||'')
+  document.getElementById('mo-out-t').textContent = mode==='add'?'Add Outsourced Job':'Edit Outsourced Job'
+  document.getElementById('out-id').value=data.id||''
+  document.getElementById('out-process').value=data.process||''
+  document.getElementById('out-vendor').value=data.vendor||''
+  document.getElementById('out-sent').value=data.sent_date||''
+  document.getElementById('out-expected').value=data.expected_back||''
+  document.getElementById('out-actual').value=data.actual_back||''
+  document.getElementById('out-status').value=data.status||'sent'
+  document.getElementById('out-notes').value=data.notes||''
+  O('mo-out')
+}
+async function editOut(id) { const {data}=await db.from('outsourced_jobs').select('*').eq('id',id).single(); openOutModal('edit',data) }
+async function saveOut() {
+  const id = g('out-id')
+  const p = {job_id:g('out-job')||null,process:g('out-process'),vendor:g('out-vendor'),sent_date:g('out-sent')||null,expected_back:g('out-expected')||null,actual_back:g('out-actual')||null,status:g('out-status'),notes:g('out-notes')}
+  if(!p.process||!p.vendor){toast('Process and Vendor required','error');return}
+  const {error}=id?await db.from('outsourced_jobs').update(p).eq('id',id):await db.from('outsourced_jobs').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Updated':'Added'); X('mo-out'); loadOutsourced()
+}
+
+// DISPATCH
+async function loadDispatches() {
+  const {data,error} = await db.from('dispatches').select('*, clients(name), orders(order_id)').order('created_at',{ascending:false})
+  const tb = document.getElementById('tb-disp')
+  if(error){tb.innerHTML=eR(error,8);return}
+  if(!data.length){tb.innerHTML=eE('No dispatches yet.',8);return}
+  tb.innerHTML = data.map(r=>`<tr>
+    <td class="mono">${r.dispatch_id}</td>
+    <td>${r.clients?.name||'—'}</td>
+    <td>${r.dispatch_date||'—'}</td>
+    <td><span class="badge badge-muted">${r.delivery_mode||'—'}</span></td>
+    <td>${r.tracking_number||'—'}</td>
+    <td>${r.invoice_number||'—'}</td>
+    <td>${stBadge(r.status)}</td>
+    <td>${acts('editDisp',r.id,'dispatches')}</td>
+  </tr>`).join('')
+}
+async function openDispModal(mode,data={}) {
+  fS('disp-client', CC, 'id', 'name', data.client_id||'')
+  const {data:orders} = await db.from('orders').select('id,order_id').order('created_at',{ascending:false})
+  fS('disp-order', orders||[], 'id', 'order_id', data.order_id||'')
+  document.getElementById('mo-disp-t').textContent = mode==='add'?'New Dispatch':'Edit Dispatch'
+  document.getElementById('disp-id').value=data.id||''
+  document.getElementById('disp-code').value=data.dispatch_id||''
+  document.getElementById('disp-date').value=data.dispatch_date||new Date().toISOString().split('T')[0]
+  document.getElementById('disp-mode').value=data.delivery_mode||'courier'
+  document.getElementById('disp-tracking').value=data.tracking_number||''
+  document.getElementById('disp-invoice').value=data.invoice_number||''
+  document.getElementById('disp-status').value=data.status||'dispatched'
+  document.getElementById('disp-notes').value=data.notes||''
+  O('mo-disp')
+}
+async function editDisp(id) { const {data}=await db.from('dispatches').select('*').eq('id',id).single(); openDispModal('edit',data) }
+async function saveDisp() {
+  const id = g('disp-id')
+  const p = {dispatch_id:g('disp-code'),client_id:g('disp-client')||null,order_id:g('disp-order')||null,dispatch_date:g('disp-date')||null,delivery_mode:g('disp-mode'),tracking_number:g('disp-tracking'),invoice_number:g('disp-invoice'),status:g('disp-status'),notes:g('disp-notes')}
+  if(!p.dispatch_id){toast('Dispatch ID required','error');return}
+  const {error}=id?await db.from('dispatches').update(p).eq('id',id):await db.from('dispatches').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Dispatch updated':'Dispatch created'); X('mo-disp'); loadDispatches()
 }
 
 // ── INIT ──────────────────────────────────────────────────────
