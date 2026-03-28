@@ -589,6 +589,60 @@
       <div class="modal-footer"><button class="btn" onclick="X('mo-route')">Cancel</button><button class="btn btn-primary" onclick="saveRoute()">Save Step</button></div>
     </div>
   </div>
+  <!-- QUICK STATUS UPDATE MODAL -->
+  <div class="modal-overlay" id="mo-status">
+    <div class="modal" style="max-width:380px;">
+      <div class="modal-header">
+        <div>
+          <span class="modal-title">Update Job Status</span>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:1px;margin-top:2px;" id="status-job-label"></div>
+        </div>
+        <button class="modal-close" onclick="X('mo-status')">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="status-job-id"/>
+        <input type="hidden" id="status-from"/>
+        <div class="form-group">
+          <label class="form-label">New Status *</label>
+          <select class="form-select" id="status-new">
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="ready">Ready</option>
+            <option value="dispatched">Dispatched</option>
+            <option value="on_hold">On Hold</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Department</label>
+          <select class="form-select" id="status-dept">
+            <option value="">— Not Started —</option>
+            <option value="Prepress">Prepress</option>
+            <option value="Cutting">Cutting</option>
+            <option value="Offset Printing">Offset Printing</option>
+            <option value="Screen Printing">Screen Printing</option>
+            <option value="Digital Printing">Digital Printing</option>
+            <option value="Lamination">Lamination</option>
+            <option value="Die Punching">Die Punching</option>
+            <option value="Pasting">Pasting</option>
+            <option value="Corrugation">Corrugation</option>
+            <option value="Rigid Box Assembly">Rigid Box Assembly</option>
+            <option value="Digital Embellishment">Digital Embellishment</option>
+            <option value="Packing &amp; Dispatch">Packing &amp; Dispatch</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (optional)</label>
+          <textarea class="form-input" id="status-notes" placeholder="Reason for update..." rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="X('mo-status')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveStatusUpdate()">Update Status</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODULE 3 — OVERSIGHT & INTELLIGENCE -->
   <div class="view" id="view-m3" style="overflow-y:auto;">
     <div class="mod-header">
@@ -984,6 +1038,46 @@ async function saveSz(){
   toast(id?'Size updated':'Size added'); X('mo-sz'); loadSizes()
 }
 
+// ── QUICK STATUS UPDATE ───────────────────────────────────────
+function openStatusModal(jobId, currentStatus, currentDept, jobCode) {
+  document.getElementById('status-job-id').value = jobId
+  document.getElementById('status-from').value = currentStatus
+  document.getElementById('status-job-label').textContent = jobCode
+  document.getElementById('status-new').value = currentStatus
+  document.getElementById('status-dept').value = currentDept || ''
+  document.getElementById('status-notes').value = ''
+  O('mo-status')
+}
+
+async function saveStatusUpdate() {
+  const jobId   = document.getElementById('status-job-id').value
+  const from    = document.getElementById('status-from').value
+  const to      = g('status-new')
+  const dept    = g('status-dept')
+  const notes   = g('status-notes')
+
+  // Update job card
+  const { error } = await db.from('job_cards').update({
+    status: to,
+    current_dept: dept || null
+  }).eq('id', jobId)
+
+  if (error) { toast('Update failed: ' + error.message, 'error'); return }
+
+  // Log to job_status_log
+  await db.from('job_status_log').insert({
+    job_id: jobId,
+    from_status: from,
+    to_status: to,
+    department: dept || null,
+    notes: notes || null
+  })
+
+  toast('Status updated → ' + to)
+  X('mo-status')
+  loadJobs()
+}
+
 // ── MODULE 2 — OPERATIONAL WORKFLOW ──────────────────────────
 
 function m2tab(id) {
@@ -1071,7 +1165,11 @@ async function loadJobs() {
     <td>${r.due_date||'—'}</td>
     <td>${r.current_dept?`<span class="badge badge-muted">${r.current_dept}</span>`:'—'}</td>
     <td>${stBadge(r.status)}</td>
-    <td>${acts('editJob',r.id,'job_cards')}</td>
+    <td><div style="display:flex;gap:5px;">
+      <button class="btn btn-sm" style="background:rgba(232,255,71,0.1);color:var(--accent);border-color:rgba(232,255,71,0.3);" onclick="openStatusModal('${r.id}','${r.status}','${r.current_dept||''}','${r.job_id}')">↑ Status</button>
+      <button class="btn btn-sm" onclick="editJob('${r.id}')">Edit</button>
+      <button class="btn btn-sm btn-danger" onclick="del('job_cards','${r.id}')">Del</button>
+    </div></td>
   </tr>`).join('')
 }
 
