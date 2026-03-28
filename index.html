@@ -590,7 +590,7 @@
     </div>
   </div>
   <!-- MODULE 3 — OVERSIGHT & INTELLIGENCE -->
-  <div class="view" id="view-m3">
+  <div class="view" id="view-m3" style="overflow-y:auto;">
     <div class="mod-header">
       <div><div class="mod-hl"><span class="mod-tag">M03</span><span class="mod-title">Oversight & Intelligence</span></div><div class="mod-sub">Real-time view of the entire business — updated on load</div></div>
       <div style="display:flex;gap:10px;align-items:center;">
@@ -599,54 +599,71 @@
       </div>
     </div>
 
-    <!-- KPI STRIP -->
-    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
-      <div class="kpi-card" id="kpi-open-orders"><div class="kpi-num">—</div><div class="kpi-label">Open Orders</div></div>
-      <div class="kpi-card" id="kpi-open-jobs"><div class="kpi-num">—</div><div class="kpi-label">Active Jobs</div></div>
-      <div class="kpi-card kpi-warn" id="kpi-delayed"><div class="kpi-num">—</div><div class="kpi-label">Delayed Jobs</div></div>
-      <div class="kpi-card" id="kpi-dispatched"><div class="kpi-num">—</div><div class="kpi-label">Dispatched Today</div></div>
-      <div class="kpi-card" id="kpi-outsourced"><div class="kpi-num">—</div><div class="kpi-label">Outsourced Pending</div></div>
+    <!-- TABS -->
+    <div class="mod-tabs">
+      <div class="mod-tab active" id="m3tab-overview"    onclick="m3tab('overview')">Overview</div>
+      <div class="mod-tab"        id="m3tab-orders"      onclick="m3tab('orders')">Active Orders</div>
+      <div class="mod-tab"        id="m3tab-depts"       onclick="m3tab('depts')">Department Load</div>
+      <div class="mod-tab"        id="m3tab-delayed"     onclick="m3tab('delayed')">Delayed Jobs</div>
+      <div class="mod-tab"        id="m3tab-outsourced"  onclick="m3tab('outsourced')">Outsourced</div>
+      <div class="mod-tab"        id="m3tab-dispatches"  onclick="m3tab('dispatches')">Dispatches</div>
     </div>
 
-    <div class="mod-body" style="display:flex;flex-direction:column;gap:32px;">
+    <div class="mod-body">
 
-      <!-- ROW 1 — ACTIVE ORDERS (full width) -->
-      <div>
+      <!-- OVERVIEW -->
+      <div id="m3-tab-overview">
+        <div style="display:flex;gap:2px;margin-bottom:28px;border:1px solid var(--border);overflow-x:auto;scrollbar-width:none;">
+          <div class="kpi-card" id="kpi-open-orders"><div class="kpi-num">—</div><div class="kpi-label">Open Orders</div></div>
+          <div class="kpi-card" id="kpi-open-jobs"><div class="kpi-num">—</div><div class="kpi-label">Active Jobs</div></div>
+          <div class="kpi-card kpi-warn" id="kpi-delayed"><div class="kpi-num">—</div><div class="kpi-label">Delayed Jobs</div></div>
+          <div class="kpi-card" id="kpi-dispatched"><div class="kpi-num">—</div><div class="kpi-label">Dispatched Today</div></div>
+          <div class="kpi-card" id="kpi-outsourced"><div class="kpi-num">—</div><div class="kpi-label">Outsourced Pending</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+          <div>
+            <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.2</span><h3 class="sec-title">Department Load</h3></div></div>
+            <div class="tw"><table class="dt"><thead><tr><th>Department</th><th>Active</th><th>Delayed</th><th>Load</th></tr></thead>
+            <tbody id="m3-depts-ov"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+          </div>
+          <div>
+            <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.5</span><h3 class="sec-title">Jobs by Status</h3></div></div>
+            <div class="tw"><table class="dt"><thead><tr><th>Status</th><th>Count</th></tr></thead>
+            <tbody id="m3-job-status"><tr><td colspan="2"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE ORDERS -->
+      <div id="m3-tab-orders" style="display:none;">
         <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.1</span><h3 class="sec-title">Active Orders</h3></div></div>
         <div class="tw"><table class="dt"><thead><tr><th>Order ID</th><th>Client</th><th>Order Date</th><th>Delivery Date</th><th>Priority</th><th>Status</th><th>Jobs</th><th>Flag</th></tr></thead>
         <tbody id="m3-orders"><tr><td colspan="8"><div class="loading">Loading...</div></td></tr></tbody></table></div>
       </div>
 
-      <!-- ROW 2 — DEPT LOAD + DELAYED JOBS side by side -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-        <div>
-          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.2</span><h3 class="sec-title">Department Load</h3></div></div>
-          <div class="tw"><table class="dt"><thead><tr><th>Department</th><th>Active</th><th>Delayed</th><th>Load Bar</th></tr></thead>
-          <tbody id="m3-depts"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div>
-        </div>
-        <div>
-          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.3</span><h3 class="sec-title">Delayed Jobs</h3></div></div>
-          <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Client</th><th>Due Date</th><th>Days Over</th><th>Status</th></tr></thead>
-          <tbody id="m3-delayed"><tr><td colspan="5"><div class="loading">Loading...</div></td></tr></tbody></table></div>
-        </div>
+      <!-- DEPARTMENT LOAD -->
+      <div id="m3-tab-depts" style="display:none;">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.2</span><h3 class="sec-title">Department Load</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Department</th><th>Active Jobs</th><th>Delayed</th><th>Load Bar</th></tr></thead>
+        <tbody id="m3-depts"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div>
       </div>
 
-      <!-- ROW 3 — OUTSOURCED + JOBS BY STATUS side by side -->
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
-        <div>
-          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.4</span><h3 class="sec-title">Outsourced — Pending Return</h3></div></div>
-          <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Process</th><th>Vendor</th><th>Expected Back</th><th>Days Over</th><th>Status</th></tr></thead>
-          <tbody id="m3-outsourced"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
-        </div>
-        <div>
-          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.5</span><h3 class="sec-title">Jobs by Status</h3></div></div>
-          <div class="tw"><table class="dt"><thead><tr><th>Status</th><th>Count</th></tr></thead>
-          <tbody id="m3-job-status"><tr><td colspan="2"><div class="loading">Loading...</div></td></tr></tbody></table></div>
-        </div>
+      <!-- DELAYED JOBS -->
+      <div id="m3-tab-delayed" style="display:none;">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.3</span><h3 class="sec-title">Delayed Jobs</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Client</th><th>Due Date</th><th>Days Over</th><th>Department</th><th>Status</th></tr></thead>
+        <tbody id="m3-delayed"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
       </div>
 
-      <!-- ROW 4 — RECENT DISPATCHES (full width) -->
-      <div>
+      <!-- OUTSOURCED -->
+      <div id="m3-tab-outsourced" style="display:none;">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.4</span><h3 class="sec-title">Outsourced — Pending Return</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Process</th><th>Vendor</th><th>Expected Back</th><th>Days Over</th><th>Status</th></tr></thead>
+        <tbody id="m3-outsourced"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- DISPATCHES -->
+      <div id="m3-tab-dispatches" style="display:none;">
         <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.6</span><h3 class="sec-title">Recent Dispatches</h3></div></div>
         <div class="tw"><table class="dt"><thead><tr><th>Dispatch ID</th><th>Client</th><th>Date</th><th>Mode</th><th>Invoice</th><th>Status</th></tr></thead>
         <tbody id="m3-dispatches"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
@@ -1224,15 +1241,27 @@ async function saveDisp() {
 
 // ── MODULE 3 — OVERSIGHT & INTELLIGENCE ──────────────────────
 
+function m3tab(id) {
+  ['overview','orders','depts','delayed','outsourced','dispatches'].forEach(t => {
+    document.getElementById('m3-tab-'+t).style.display = t===id ? 'block' : 'none'
+    document.getElementById('m3tab-'+t).classList.toggle('active', t===id)
+  })
+  if(id==='orders') loadM3Orders()
+  if(id==='depts') loadM3DeptLoad()
+  if(id==='delayed') loadM3Delayed()
+  if(id==='outsourced') loadM3Outsourced()
+  if(id==='dispatches') loadM3Dispatches()
+}
+
 async function loadM3() {
   await Promise.all([
+    loadM3KPIs(),
     loadM3Orders(),
     loadM3DeptLoad(),
     loadM3Delayed(),
     loadM3Outsourced(),
     loadM3JobStatus(),
-    loadM3Dispatches(),
-    loadM3KPIs()
+    loadM3Dispatches()
   ])
 }
 
@@ -1275,8 +1304,9 @@ async function loadM3Orders() {
 async function loadM3DeptLoad() {
   const {data,error} = await db.from('job_cards').select('current_dept, due_date, status').in('status',['open','in_progress']).not('current_dept','is',null)
   const tb = document.getElementById('m3-depts')
-  if(error){tb.innerHTML=eR(error,4);return}
-  if(!data.length){tb.innerHTML=eE('No active jobs in production.',4);return}
+  const tbOv = document.getElementById('m3-depts-ov')
+  if(error){tb.innerHTML=eR(error,4);if(tbOv)tbOv.innerHTML=eR(error,4);return}
+  if(!data.length){const msg=eE('No active jobs in production.',4);tb.innerHTML=msg;if(tbOv)tbOv.innerHTML=msg;return}
   const today = new Date().toISOString().split('T')[0]
   const deptMap = {}
   data.forEach(r=>{
@@ -1285,7 +1315,7 @@ async function loadM3DeptLoad() {
     if(r.due_date && r.due_date < today) deptMap[r.current_dept].delayed++
   })
   const max = Math.max(...Object.values(deptMap).map(d=>d.total))
-  tb.innerHTML = Object.entries(deptMap).sort((a,b)=>b[1].total-a[1].total).map(([dept,d])=>{
+  const rows = Object.entries(deptMap).sort((a,b)=>b[1].total-a[1].total).map(([dept,d])=>{
     const pct = Math.round((d.total/max)*100)
     return `<tr>
       <td><strong>${dept}</strong></td>
@@ -1294,6 +1324,8 @@ async function loadM3DeptLoad() {
       <td><div style="background:var(--border);height:6px;border-radius:2px;width:120px;"><div style="background:var(--accent);height:100%;width:${pct}%;border-radius:2px;"></div></div></td>
     </tr>`
   }).join('')
+  tb.innerHTML = rows
+  if(tbOv) tbOv.innerHTML = rows
 }
 
 async function loadM3Delayed() {
