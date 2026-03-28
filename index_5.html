@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BOS — Business Operating System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #111111; --surface2: #161616;
+    --border: #222222; --border2: #2a2a2a;
+    --accent: #e8ff47; --accent2: #ff6b35;
+    --text: #f0f0f0; --muted: #666666; --muted2: #888888;
+    --done: #4ade80; --warn: #facc15; --danger: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; display: flex; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(232,255,71,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(232,255,71,0.02) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+
+  /* SIDEBAR */
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: relative; z-index: 1; }
+  .sidebar-brand { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .brand-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 4px; color: var(--accent); line-height: 1; }
+  .brand-sub { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 10px 0; scrollbar-width: none; }
+  .sidebar-nav::-webkit-scrollbar { display: none; }
+  .nav-label { padding: 10px 18px 3px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; font-size: 12px; color: var(--muted2); cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent; user-select: none; }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(232,255,71,0.05); }
+  .nav-item.locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+  .nav-num { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--muted); line-height: 1; width: 22px; flex-shrink: 0; transition: color 0.15s; }
+  .nav-item.active .nav-num { color: var(--accent); }
+  .nav-badge { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 1px 5px; border-radius: 2px; margin-left: auto; flex-shrink: 0; }
+  .nb-live { background: rgba(232,255,71,0.12); color: var(--accent); border: 1px solid rgba(232,255,71,0.2); }
+  .nb-lock { background: rgba(100,100,100,0.1); color: var(--muted); border: 1px solid var(--border); }
+  .sidebar-footer { padding: 14px 18px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .conn-row { display: flex; align-items: center; gap: 7px; }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; animation: pulse 1.5s infinite; }
+  .conn-dot.connected { background: var(--done); animation: none; }
+  .conn-dot.error { background: var(--danger); animation: none; }
+  .conn-txt { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+  /* MAIN */
+  .main { flex: 1; height: 100vh; overflow: hidden; position: relative; z-index: 1; display: flex; flex-direction: column; }
+
+  /* VIEWS */
+  .view { display: none; flex: 1; overflow-y: auto; flex-direction: column; height: 100%; }
+  .view.active { display: flex; }
+
+  /* HOME */
+  .home-header { padding: 48px 48px 28px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+  .home-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 72px; letter-spacing: 5px; line-height: 1; }
+  .home-header h1 span { color: var(--accent); }
+  .home-header p { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .home-body { padding: 36px 48px; }
+  .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2px; }
+  .home-card { background: var(--surface); border: 1px solid var(--border); padding: 22px; cursor: pointer; position: relative; overflow: hidden; transition: all 0.2s; }
+  .home-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--border); transition: background 0.2s; }
+  .home-card:hover { background: #161616; border-color: #333; }
+  .home-card:hover::before { background: var(--accent); }
+  .home-card.live::before { background: var(--accent); }
+  .home-card.locked-card { opacity: 0.4; cursor: not-allowed; }
+  .home-card.locked-card:hover { background: var(--surface); border-color: var(--border); }
+  .home-card.locked-card:hover::before { background: var(--border); }
+  .hc-num { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--muted); line-height: 1; margin-bottom: 6px; }
+  .home-card.live .hc-num { color: var(--accent); }
+  .hc-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+  .hc-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  .hc-badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 2px; display: inline-block; }
+  .hcb-live { background: rgba(232,255,71,0.1); color: var(--accent); border: 1px solid rgba(232,255,71,0.2); }
+  .hcb-lock { background: rgba(100,100,100,0.1); color: var(--muted); border: 1px solid var(--border); }
+  .hcb-pend { background: rgba(250,204,21,0.1); color: var(--warn); border: 1px solid rgba(250,204,21,0.2); }
+
+  /* MODULE HEADER */
+  .mod-header { padding: 24px 36px 18px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .mod-hl { display: flex; align-items: baseline; gap: 12px; }
+  .mod-tag { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--accent); letter-spacing: 3px; line-height: 1; }
+  .mod-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; line-height: 1; }
+  .mod-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* TABS */
+  .mod-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+  .mod-tabs::-webkit-scrollbar { display: none; }
+  .mod-tab { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
+  .mod-tab:hover { color: var(--text); }
+  .mod-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MODULE CONTENT */
+  .mod-body { padding: 28px 36px; flex: 1; }
+  .section { margin-bottom: 40px; }
+  .sec-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; flex-wrap: wrap; gap: 8px; }
+  .sec-ttl { display: flex; align-items: baseline; gap: 10px; }
+  .sec-code { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 2px; background: rgba(232,255,71,0.08); padding: 2px 7px; border: 1px solid rgba(232,255,71,0.15); }
+  .sec-title { font-size: 17px; font-weight: 600; }
+
+  /* LOCKED VIEW */
+  .lock-view { display: flex; align-items: center; justify-content: center; flex: 1; flex-direction: column; gap: 14px; padding: 48px; text-align: center; }
+  .lock-num { font-family: 'Bebas Neue', sans-serif; font-size: 110px; color: var(--border2); line-height: 1; }
+  .lock-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--muted); }
+  .lock-desc { font-size: 13px; color: var(--muted); max-width: 340px; line-height: 1.6; }
+
+  /* BUTTONS */
+  .btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 7px 15px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+  .btn-primary:hover { background: #d4e83f; }
+  .btn-danger { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #000; }
+  .btn-sm { padding: 4px 9px; font-size: 9px; }
+
+  /* BADGES */
+  .badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 7px; border-radius: 2px; white-space: nowrap; }
+  .badge-green  { background: rgba(74,222,128,0.1);  color: var(--done);   border: 1px solid rgba(74,222,128,0.2); }
+  .badge-yellow { background: rgba(250,204,21,0.1);  color: var(--warn);   border: 1px solid rgba(250,204,21,0.2); }
+  .badge-accent { background: rgba(232,255,71,0.1);  color: var(--accent); border: 1px solid rgba(232,255,71,0.2); }
+  .badge-muted  { background: rgba(100,100,100,0.1); color: var(--muted);  border: 1px solid var(--border); }
+  .badge-danger { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+
+  /* TABLE */
+  .tw { border: 1px solid var(--border); overflow-x: auto; }
+  .dt { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dt th { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); background: var(--surface); white-space: nowrap; }
+  .dt td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  .dt tr:hover td { background: rgba(255,255,255,0.02); }
+  .dt tr:last-child td { border-bottom: none; }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+  /* MODAL */
+  .mo { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .mo.open { display: flex; }
+  .md { background: var(--surface); border: 1px solid var(--border2); width: 100%; max-width: 510px; max-height: 90vh; overflow-y: auto; }
+  .md-hdr { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .md-title { font-family: 'Bebas Neue', sans-serif; font-size: 21px; letter-spacing: 2px; }
+  .md-x { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 22px; line-height: 1; padding: 0 3px; transition: color 0.2s; }
+  .md-x:hover { color: var(--text); }
+  .md-body { padding: 20px; }
+  .md-foot { padding: 13px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* FORM */
+  .fg { margin-bottom: 13px; }
+  .fl { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .fi, .fs { width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; padding: 8px 11px; outline: none; transition: border-color 0.2s; }
+  .fi:focus, .fs:focus { border-color: var(--accent); }
+  .fs { appearance: none; cursor: pointer; }
+  textarea.fi { resize: vertical; min-height: 56px; }
+  .fr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 22px; right: 22px; background: var(--surface); border: 1px solid var(--border2); padding: 11px 16px; font-size: 13px; z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 300px; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-left: 3px solid var(--done); }
+  .toast.error   { border-left: 3px solid var(--danger); }
+
+  .loading { padding: 26px; text-align: center; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1px; }
+  .empty { padding: 26px; text-align: center; color: var(--muted); font-size: 13px; border: 1px dashed var(--border2); }
+  .dbn { background: rgba(232,255,71,0.04); border: 1px solid rgba(232,255,71,0.12); padding: 9px 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--muted2); }
+  .dbl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase; flex-shrink: 0; }
+
+  @media(max-width:600px) { .sidebar{display:none;} .mod-body{padding:16px;} .mod-header{padding:16px;} }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODALS -->
+<div class="mo" id="mo-client">
+  <div class="md">
+    <div class="md-hdr"><span class="md-title" id="mc-t">Add Client</span><button class="md-x" onclick="X('mo-client')">×</button></div>
+    <div class="md-body">
+      <input type="hidden" id="mc-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Code *</label><input class="fi" id="mc-code" placeholder="CLT-001"/></div><div class="fg"><label class="fl">Short Name</label><input class="fi" id="mc-short" placeholder="C01"/></div></div>
+      <div class="fg"><label class="fl">Name *</label><input class="fi" id="mc-name" placeholder="Full client name"/></div>
+      <div class="fr"><div class="fg"><label class="fl">City</label><input class="fi" id="mc-city" placeholder="Mumbai"/></div><div class="fg"><label class="fl">Status</label><select class="fs" id="mc-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div>
+      <div class="fg"><label class="fl">Contact Name</label><input class="fi" id="mc-contact" placeholder="Name"/></div>
+      <div class="fr"><div class="fg"><label class="fl">Phone</label><input class="fi" id="mc-phone" placeholder="+91 00000 00000"/></div><div class="fg"><label class="fl">Credit Terms</label><input class="fi" id="mc-credit" placeholder="30 days"/></div></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="mc-notes"></textarea></div>
+    </div>
+    <div class="md-foot"><button class="btn" onclick="X('mo-client')">Cancel</button><button class="btn btn-primary" onclick="saveClient()">Save Client</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-mat">
+  <div class="md">
+    <div class="md-hdr"><span class="md-title" id="mm-t">Add Material</span><button class="md-x" onclick="X('mo-mat')">×</button></div>
+    <div class="md-body">
+      <input type="hidden" id="mm-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Code *</label><input class="fi" id="mm-code" placeholder="MAT-001"/></div><div class="fg"><label class="fl">Type</label><select class="fs" id="mm-type"><option value="board">Board</option><option value="paper">Paper</option><option value="kraft">Kraft</option><option value="synthetic">Synthetic</option><option value="corrugated">Corrugated</option></select></div></div>
+      <div class="fg"><label class="fl">Name *</label><input class="fi" id="mm-name" placeholder="Material name"/></div>
+      <div class="fr"><div class="fg"><label class="fl">GSM Min</label><input class="fi" id="mm-gmin" type="number" placeholder="100"/></div><div class="fg"><label class="fl">GSM Max</label><input class="fi" id="mm-gmax" type="number" placeholder="400"/></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Supplier</label><input class="fi" id="mm-sup" placeholder="Supplier"/></div><div class="fg"><label class="fl">Unit</label><select class="fs" id="mm-unit"><option value="kg">kg</option><option value="sheet">sheet</option><option value="roll">roll</option></select></div></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="mm-notes"></textarea></div>
+    </div>
+    <div class="md-foot"><button class="btn" onclick="X('mo-mat')">Cancel</button><button class="btn btn-primary" onclick="saveMat()">Save</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-sz">
+  <div class="md">
+    <div class="md-hdr"><span class="md-title" id="msz-t">Add Size</span><button class="md-x" onclick="X('mo-sz')">×</button></div>
+    <div class="md-body">
+      <input type="hidden" id="msz-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Code *</label><input class="fi" id="msz-code" placeholder="SZ-001"/></div><div class="fg"><label class="fl">Label *</label><input class="fi" id="msz-label" placeholder="A4 / 19x25"/></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Width (mm)</label><input class="fi" id="msz-w" type="number" placeholder="210"/></div><div class="fg"><label class="fl">Height (mm)</label><input class="fi" id="msz-h" type="number" placeholder="297"/></div></div>
+      <div class="fg"><label class="fl">Notes</label><input class="fi" id="msz-notes" placeholder="Any notes"/></div>
+    </div>
+    <div class="md-foot"><button class="btn" onclick="X('mo-sz')">Cancel</button><button class="btn btn-primary" onclick="saveSz()">Save</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-sku">
+  <div class="md">
+    <div class="md-hdr"><span class="md-title" id="msk-t">Add Base SKU</span><button class="md-x" onclick="X('mo-sku')">×</button></div>
+    <div class="md-body">
+      <input type="hidden" id="msk-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Code *</label><input class="fi" id="msk-code" placeholder="SKU-001"/></div><div class="fg"><label class="fl">Status</label><select class="fs" id="msk-active"><option value="true">Active</option><option value="false">Inactive</option></select></div></div>
+      <div class="fg"><label class="fl">Name *</label><input class="fi" id="msk-name" placeholder="Bindi Card"/></div>
+      <div class="fg"><label class="fl">Client</label><select class="fs" id="msk-client"><option value="">— Select Client —</option></select></div>
+      <div class="fg"><label class="fl">Product Type</label><select class="fs" id="msk-pt"><option value="">— Select Product Type —</option></select></div>
+      <div class="fg"><label class="fl">Description</label><textarea class="fi" id="msk-desc"></textarea></div>
+    </div>
+    <div class="md-foot"><button class="btn" onclick="X('mo-sku')">Cancel</button><button class="btn btn-primary" onclick="saveSku()">Save</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-tool">
+  <div class="md">
+    <div class="md-hdr"><span class="md-title" id="mtl-t">Add Tool</span><button class="md-x" onclick="X('mo-tool')">×</button></div>
+    <div class="md-body">
+      <input type="hidden" id="mtl-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Serial Code *</label><input class="fi" id="mtl-serial" placeholder="TOOL-001"/></div><div class="fg"><label class="fl">Tool Type</label><select class="fs" id="mtl-type"><option value="plate">Plate</option><option value="die">Die / Punch</option><option value="screen">Screen</option><option value="block">Block</option></select></div></div>
+      <div class="fg"><label class="fl">Client</label><select class="fs" id="mtl-client"><option value="">— Select —</option></select></div>
+      <div class="fg"><label class="fl">Base SKU</label><select class="fs" id="mtl-sku"><option value="">— Select —</option></select></div>
+      <div class="fr"><div class="fg"><label class="fl">Size</label><input class="fi" id="mtl-size" placeholder='25x35"'/></div><div class="fg"><label class="fl">Condition</label><select class="fs" id="mtl-cond"><option value="good">Good</option><option value="worn">Worn</option><option value="damaged">Damaged</option></select></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Colors</label><input class="fi" id="mtl-colors" type="number" placeholder="4"/></div><div class="fg"><label class="fl">Location</label><input class="fi" id="mtl-loc" placeholder="Shelf A2"/></div></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="mtl-notes"></textarea></div>
+    </div>
+    <div class="md-foot"><button class="btn" onclick="X('mo-tool')">Cancel</button><button class="btn btn-primary" onclick="saveTool()">Save</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-art">
+  <div class="md">
+    <div class="md-hdr"><span class="md-title" id="ma-t">Add Artwork</span><button class="md-x" onclick="X('mo-art')">×</button></div>
+    <div class="md-body">
+      <input type="hidden" id="ma-id"/>
+      <div class="fr"><div class="fg"><label class="fl">Code *</label><input class="fi" id="ma-code" placeholder="ART-001"/></div><div class="fg"><label class="fl">Version</label><input class="fi" id="ma-ver" placeholder="v1"/></div></div>
+      <div class="fg"><label class="fl">File Name *</label><input class="fi" id="ma-file" placeholder="bindi_card_v1.pdf"/></div>
+      <div class="fg"><label class="fl">Client</label><select class="fs" id="ma-client"><option value="">— Select —</option></select></div>
+      <div class="fg"><label class="fl">Base SKU</label><select class="fs" id="ma-sku"><option value="">— Select —</option></select></div>
+      <div class="fg"><label class="fl">Status</label><select class="fs" id="ma-status"><option value="pending">Pending</option><option value="approved">Approved</option><option value="on_hold">On Hold</option></select></div>
+      <div class="fr"><div class="fg"><label class="fl">Approved By</label><input class="fi" id="ma-apby" placeholder="Name"/></div><div class="fg"><label class="fl">Approved Date</label><input class="fi" id="ma-apdt" type="date"/></div></div>
+      <div class="fg"><label class="fl">File Path / URL</label><input class="fi" id="ma-path" placeholder="/files/..."/></div>
+    </div>
+    <div class="md-foot"><button class="btn" onclick="X('mo-art')">Cancel</button><button class="btn btn-primary" onclick="saveArt()">Save</button></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-title">BOS</div>
+    <div class="brand-sub">Business Operating System</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Navigate</div>
+    <div class="nav-item active" id="nav-home" onclick="show('home')">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);width:22px;text-align:center;">⌂</span>
+      <span>Home</span>
+    </div>
+    <div class="nav-label" style="margin-top:6px;">Modules</div>
+    <div class="nav-item" id="nav-m1" onclick="show('m1')">
+      <span class="nav-num">01</span><span>Business Map</span>
+      <span class="nav-badge nb-live">Live</span>
+    </div>
+    <div class="nav-item locked" id="nav-m2"><span class="nav-num">02</span><span>Operational Workflow</span><span class="nav-badge nb-lock">P1</span></div>
+    <div class="nav-item locked" id="nav-m3"><span class="nav-num">03</span><span>Oversight &amp; Intel</span><span class="nav-badge nb-lock">P2</span></div>
+    <div class="nav-item locked" id="nav-m4"><span class="nav-num">04</span><span>People &amp; Accountability</span><span class="nav-badge nb-lock">P3</span></div>
+    <div class="nav-item locked" id="nav-m5"><span class="nav-num">05</span><span>Business Functions</span><span class="nav-badge nb-lock">P4</span></div>
+    <div class="nav-item locked" id="nav-m6"><span class="nav-num">06</span><span>Strategy &amp; Growth</span><span class="nav-badge nb-lock">P6</span></div>
+    <div class="nav-item locked" id="nav-m7"><span class="nav-num">07</span><span>You as the Leader</span><span class="nav-badge nb-lock">P5</span></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="conn-row">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span class="conn-txt" id="conn-txt">Connecting...</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+    <div class="home-header">
+      <h1>B<span>O</span>S</h1>
+      <p>Business Operating System &nbsp;/&nbsp; Print Packaging &nbsp;/&nbsp; Design → Build → Operate → Optimize</p>
+    </div>
+    <div class="home-body">
+      <div class="home-grid">
+        <div class="home-card live" onclick="show('m1')">
+          <div class="hc-num">01</div><div class="hc-title">Business Map</div>
+          <div class="hc-desc">All master data libraries. Clients, machines, SKUs, tooling, artwork.</div>
+          <span class="hc-badge hcb-live">Live</span>
+        </div>
+        <div class="home-card locked-card"><div class="hc-num">02</div><div class="hc-title">Operational Workflow</div><div class="hc-desc">Order intake to delivery. Job cards, production routing, dispatch.</div><span class="hc-badge hcb-lock">Phase 1 — Locked</span></div>
+        <div class="home-card locked-card"><div class="hc-num">03</div><div class="hc-title">Oversight &amp; Intelligence</div><div class="hc-desc">Management dashboard. Real-time visibility, department load, metrics.</div><span class="hc-badge hcb-lock">Phase 2 — Locked</span></div>
+        <div class="home-card locked-card"><div class="hc-num">04</div><div class="hc-title">People &amp; Accountability</div><div class="hc-desc">KRAs, SOPs, reporting discipline, incentive and penalty structure.</div><span class="hc-badge hcb-lock">Phase 3 — Locked</span></div>
+        <div class="home-card locked-card"><div class="hc-num">05</div><div class="hc-title">Business Functions</div><div class="hc-desc">Finance, Sales, Purchases, HR — each with clear ownership.</div><span class="hc-badge hcb-lock">Phase 4 — Locked</span></div>
+        <div class="home-card locked-card"><div class="hc-num">06</div><div class="hc-title">Strategy &amp; Growth</div><div class="hc-desc">New products, new segments, brand positioning, AI services.</div><span class="hc-badge hcb-lock">Phase 6 — Locked</span></div>
+        <div class="home-card locked-card"><div class="hc-num">07</div><div class="hc-title">You as the Leader</div><div class="hc-desc">Daily routine, decision framework, AI literacy roadmap.</div><span class="hc-badge hcb-pend">Phase 5 — Pending</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 1 -->
+  <div class="view" id="view-m1">
+    <div class="mod-header">
+      <div><div class="mod-hl"><span class="mod-tag">M01</span><span class="mod-title">Business Map</span></div><div class="mod-sub">All master data — changes save directly to Supabase</div></div>
+    </div>
+    <div class="mod-tabs">
+      <div class="mod-tab active" id="tab-c1"  onclick="tab('c1')">MDL 1 — Clients</div>
+      <div class="mod-tab"        id="tab-c2"  onclick="tab('c2')">MDL 2 — Product Types</div>
+      <div class="mod-tab"        id="tab-c3"  onclick="tab('c3')">MDL 3 — Base SKUs</div>
+      <div class="mod-tab"        id="tab-c4"  onclick="tab('c4')">MDL 4 — Materials</div>
+      <div class="mod-tab"        id="tab-c5"  onclick="tab('c5')">MDL 5 — Print</div>
+      <div class="mod-tab"        id="tab-c6"  onclick="tab('c6')">MDL 6 — Finishing</div>
+      <div class="mod-tab"        id="tab-c7"  onclick="tab('c7')">MDL 7 — Fabrication</div>
+      <div class="mod-tab"        id="tab-c8"  onclick="tab('c8')">MDL 8 — Tooling</div>
+      <div class="mod-tab"        id="tab-c9"  onclick="tab('c9')">MDL 9 — Artwork</div>
+      <div class="mod-tab"        id="tab-c10" onclick="tab('c10')">MDL 10 — Sizes</div>
+    </div>
+    <div class="mod-body">
+
+      <div id="tc1">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 01</span><h3 class="sec-title">Clients</h3></div><button class="btn btn-primary" onclick="openClient('add')">+ Add Client</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">clients</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>City</th><th>Contact</th><th>Credit Terms</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tb-cl"><tr><td colspan="7"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc2" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 02</span><h3 class="sec-title">Product Types</h3></div><span class="badge badge-green">Seeded — 8 Types</span></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">product_types</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Description</th><th>Status</th></tr></thead><tbody id="tb-pt"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc3" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 03</span><h3 class="sec-title">Base SKUs</h3></div><button class="btn btn-primary" onclick="openSku('add')">+ Add SKU</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">base_skus</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Client</th><th>Product Type</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tb-sk"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc4" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 04</span><h3 class="sec-title">Materials</h3></div><button class="btn btn-primary" onclick="openMat('add')">+ Add Material</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">materials</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>GSM Range</th><th>Supplier</th><th>Unit</th><th>Actions</th></tr></thead><tbody id="tb-mt"><tr><td colspan="7"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc5" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 05</span><h3 class="sec-title">Print Methods</h3></div><span class="badge badge-green">Seeded</span></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">print_methods</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Max Colors</th><th>Status</th></tr></thead><tbody id="tb-pr"><tr><td colspan="5"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc6" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 06</span><h3 class="sec-title">Finishing Processes</h3></div><span class="badge badge-green">Seeded</span></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">finishing_processes</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Status</th></tr></thead><tbody id="tb-fn"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc7" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 07</span><h3 class="sec-title">Fabrication Styles</h3></div><span class="badge badge-green">Seeded</span></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">fabrication_styles</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Applicable To</th><th>Status</th></tr></thead><tbody id="tb-fb"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc8" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 08</span><h3 class="sec-title">Tooling</h3></div><button class="btn btn-primary" onclick="openTool('add')">+ Add Tool</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">tooling</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Serial</th><th>Type</th><th>Client</th><th>Base SKU</th><th>Size</th><th>Condition</th><th>Location</th><th>Actions</th></tr></thead><tbody id="tb-tl"><tr><td colspan="8"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc9" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 09</span><h3 class="sec-title">Artwork</h3></div><button class="btn btn-primary" onclick="openArt('add')">+ Add Artwork</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">artwork</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>File Name</th><th>Version</th><th>Client</th><th>Base SKU</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tb-ar"><tr><td colspan="7"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+      <div id="tc10" style="display:none">
+        <div class="section"><div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">MDL 10</span><h3 class="sec-title">Size Standards</h3></div><button class="btn btn-primary" onclick="openSz('add')">+ Add Size</button></div>
+        <div class="dbn"><span class="dbl">Supabase</span>Table: <span class="mono" style="color:var(--accent)">size_standards</span></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Code</th><th>Label</th><th>Width (mm)</th><th>Height (mm)</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="tb-sz"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LOCKED VIEWS 2-7 -->
+  <div class="view" id="view-m2"><div class="lock-view"><div class="lock-num">02</div><div class="lock-title">Operational Workflow</div><div class="lock-desc">Locked. Complete Module 1 and confirm stable before Phase 1 begins.</div></div></div>
+  <div class="view" id="view-m3"><div class="lock-view"><div class="lock-num">03</div><div class="lock-title">Oversight &amp; Intelligence</div><div class="lock-desc">Locked until Phase 1 is complete and stable.</div></div></div>
+  <div class="view" id="view-m4"><div class="lock-view"><div class="lock-num">04</div><div class="lock-title">People &amp; Accountability</div><div class="lock-desc">Locked until Phase 1 is stable.</div></div></div>
+  <div class="view" id="view-m5"><div class="lock-view"><div class="lock-num">05</div><div class="lock-title">Business Functions</div><div class="lock-desc">Locked until Phase 2 is complete.</div></div></div>
+  <div class="view" id="view-m6"><div class="lock-view"><div class="lock-num">06</div><div class="lock-title">Strategy &amp; Growth</div><div class="lock-desc">Locked until Phases 1–4 are all stable.</div></div></div>
+  <div class="view" id="view-m7"><div class="lock-view"><div class="lock-num">07</div><div class="lock-title">You as the Leader</div><div class="lock-desc">Starts in parallel with Phase 1. Build pending.</div></div></div>
+
+</div>
+
+<script>
+// ============================================================
+// ⚙️  SWAP THESE TWO VALUES
+// ============================================================
+const SUPABASE_URL      = 'YOUR_SUPABASE_URL'
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'
+// ============================================================
+
+const { createClient } = supabase
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+let CC = [] // clients cache
+let PC = [] // product types cache
+
+// ── VIEW / TAB SWITCHING ──────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+  document.querySelectorAll('.nav-item:not(.locked)').forEach(n => n.classList.remove('active'))
+  document.getElementById('view-' + id).classList.add('active')
+  const nav = document.getElementById('nav-' + id)
+  if (nav) nav.classList.add('active')
+}
+
+function tab(id) {
+  document.querySelectorAll('.mod-tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('tab-' + id).classList.add('active')
+  for (let i = 1; i <= 10; i++) {
+    const el = document.getElementById('tc' + i)
+    if (el) el.style.display = id === 'c' + i ? 'block' : 'none'
+  }
+}
+
+// ── CONNECTION ────────────────────────────────────────────────
+async function testConn() {
+  try {
+    const { error } = await db.from('product_types').select('id').limit(1)
+    if (error) throw error
+    document.getElementById('conn-dot').className = 'conn-dot connected'
+    document.getElementById('conn-txt').textContent = 'Connected'
+  } catch {
+    document.getElementById('conn-dot').className = 'conn-dot error'
+    document.getElementById('conn-txt').textContent = 'Connection failed'
+  }
+}
+
+// ── TOAST / MODAL / HELPERS ───────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.getElementById('toast')
+  t.textContent = msg; t.className = `toast ${type} show`
+  setTimeout(() => t.className = 'toast', 3000)
+}
+function O(id)  { document.getElementById(id).classList.add('open') }
+function X(id)  { document.getElementById(id).classList.remove('open') }
+document.querySelectorAll('.mo').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open') }))
+function g(id) { return (document.getElementById(id)?.value || '').trim() }
+function eR(e, c) { return `<tr><td colspan="${c}"><div class="empty" style="color:var(--danger)">Error: ${e.message}</div></td></tr>` }
+function eE(m, c) { return `<tr><td colspan="${c}"><div class="empty">${m}</div></td></tr>` }
+function sb(v) {
+  const m = { true:'badge-green',false:'badge-muted',active:'badge-green',inactive:'badge-muted',good:'badge-green',worn:'badge-yellow',damaged:'badge-danger',approved:'badge-green',pending:'badge-yellow',on_hold:'badge-muted' }
+  const l = { true:'Active',false:'Inactive',active:'Active',inactive:'Inactive',good:'Good',worn:'Worn',damaged:'Damaged',approved:'Approved',pending:'Pending',on_hold:'On Hold' }
+  const k = v === true ? 'true' : v === false ? 'false' : String(v)
+  return `<span class="badge ${m[k]||'badge-muted'}">${l[k]||v||'—'}</span>`
+}
+function acts(ef, id, tbl) { return `<div style="display:flex;gap:5px;"><button class="btn btn-sm" onclick="${ef}('${id}')">Edit</button><button class="btn btn-sm btn-danger" onclick="del('${tbl}','${id}')">Del</button></div>` }
+function fillS(id, data, vk, lk, sel='') {
+  const el = document.getElementById(id)
+  const f = el.options[0].outerHTML
+  el.innerHTML = f + data.map(r => `<option value="${r[vk]}"${r[vk]===sel?' selected':''}>${r[lk]}</option>`).join('')
+}
+async function del(tbl, id) {
+  if (!confirm('Delete this record?')) return
+  const { error } = await db.from(tbl).delete().eq('id', id)
+  if (error) { toast('Delete failed: '+error.message,'error'); return }
+  toast('Deleted'); loadAll()
+}
+
+// ── MDL 01 CLIENTS ────────────────────────────────────────────
+async function loadClients() {
+  const { data, error } = await db.from('clients').select('*').order('code')
+  const tb = document.getElementById('tb-cl')
+  if (error) { tb.innerHTML = eR(error,7); return }
+  if (!data.length) { tb.innerHTML = eE('No clients yet.',7); return }
+  CC = data
+  tb.innerHTML = data.map(r => `<tr>
+    <td class="mono">${r.code}</td>
+    <td><strong>${r.name}</strong>${r.short_name?` <span style="color:var(--muted);font-size:11px;">(${r.short_name})</span>`:''}</td>
+    <td>${r.city||'—'}</td><td>${r.contact_name||'—'}</td><td>${r.credit_terms||'—'}</td>
+    <td>${sb(r.status==='active')}</td><td>${acts('editClient',r.id,'clients')}</td>
+  </tr>`).join('')
+}
+function openClient(mode, d={}) {
+  document.getElementById('mc-t').textContent = mode==='add'?'Add Client':'Edit Client'
+  document.getElementById('mc-id').value=d.id||''; document.getElementById('mc-code').value=d.code||''
+  document.getElementById('mc-name').value=d.name||''; document.getElementById('mc-short').value=d.short_name||''
+  document.getElementById('mc-city').value=d.city||''; document.getElementById('mc-status').value=d.status||'active'
+  document.getElementById('mc-contact').value=d.contact_name||''; document.getElementById('mc-phone').value=d.contact_phone||''
+  document.getElementById('mc-credit').value=d.credit_terms||''; document.getElementById('mc-notes').value=d.notes||''
+  O('mo-client')
+}
+async function editClient(id) { const {data}=await db.from('clients').select('*').eq('id',id).single(); openClient('edit',data) }
+async function saveClient() {
+  const id=g('mc-id')
+  const p={code:g('mc-code'),name:g('mc-name'),short_name:g('mc-short'),city:g('mc-city'),status:g('mc-status'),contact_name:g('mc-contact'),contact_phone:g('mc-phone'),credit_terms:g('mc-credit'),notes:g('mc-notes')}
+  if(!p.code||!p.name){toast('Code and Name required','error');return}
+  const {error}=id?await db.from('clients').update(p).eq('id',id):await db.from('clients').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Client updated':'Client added'); X('mo-client'); loadClients()
+}
+
+// ── MDL 02 PRODUCT TYPES ──────────────────────────────────────
+async function loadPT() {
+  const {data}=await db.from('product_types').select('*').order('code')
+  const tb=document.getElementById('tb-pt')
+  if(!data||!data.length){tb.innerHTML=eE('Run schema SQL first',4);return}
+  PC=data
+  tb.innerHTML=data.map(r=>`<tr><td class="mono">${r.code}</td><td><strong>${r.name}</strong></td><td style="color:var(--muted2);font-size:12px;">${r.description||'—'}</td><td>${sb(r.is_active)}</td></tr>`).join('')
+}
+
+// ── MDL 03 BASE SKUs ──────────────────────────────────────────
+async function loadSKUs() {
+  const {data,error}=await db.from('base_skus').select('*, clients(name), product_types(name)').order('code').limit(100)
+  const tb=document.getElementById('tb-sk')
+  if(error){tb.innerHTML=eR(error,6);return}
+  if(!data.length){tb.innerHTML=eE('No SKUs yet.',6);return}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td class="mono">${r.code}</td><td><strong>${r.name}</strong></td>
+    <td>${r.clients?.name||'—'}</td><td>${r.product_types?.name||'—'}</td>
+    <td>${sb(r.is_active)}</td><td>${acts('editSku',r.id,'base_skus')}</td>
+  </tr>`).join('')
+}
+async function openSku(mode, d={}) {
+  fillS('msk-client',CC,'id','name',d.client_id||''); fillS('msk-pt',PC,'id','name',d.product_type_id||'')
+  document.getElementById('msk-t').textContent=mode==='add'?'Add Base SKU':'Edit Base SKU'
+  document.getElementById('msk-id').value=d.id||''; document.getElementById('msk-code').value=d.code||''
+  document.getElementById('msk-name').value=d.name||''; document.getElementById('msk-desc').value=d.description||''
+  document.getElementById('msk-active').value=String(d.is_active!==false); O('mo-sku')
+}
+async function editSku(id){const{data}=await db.from('base_skus').select('*').eq('id',id).single();openSku('edit',data)}
+async function saveSku(){
+  const id=g('msk-id')
+  const p={code:g('msk-code'),name:g('msk-name'),client_id:g('msk-client')||null,product_type_id:g('msk-pt')||null,description:g('msk-desc'),is_active:g('msk-active')==='true'}
+  if(!p.code||!p.name){toast('Code and Name required','error');return}
+  const{error}=id?await db.from('base_skus').update(p).eq('id',id):await db.from('base_skus').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'SKU updated':'SKU added'); X('mo-sku'); loadSKUs()
+}
+
+// ── MDL 04 MATERIALS ──────────────────────────────────────────
+async function loadMat() {
+  const{data,error}=await db.from('materials').select('*').order('code')
+  const tb=document.getElementById('tb-mt')
+  if(error){tb.innerHTML=eR(error,7);return}
+  if(!data.length){tb.innerHTML=eE('No materials yet.',7);return}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td class="mono">${r.code}</td><td><strong>${r.name}</strong></td>
+    <td><span class="badge badge-muted">${r.type||'—'}</span></td>
+    <td>${r.gsm_min&&r.gsm_max?`${r.gsm_min}–${r.gsm_max} GSM`:r.gsm_min||r.gsm_max||'—'}</td>
+    <td>${r.supplier||'—'}</td><td>${r.unit||'—'}</td>
+    <td>${acts('editMat',r.id,'materials')}</td>
+  </tr>`).join('')
+}
+function openMat(mode,d={}){
+  document.getElementById('mm-t').textContent=mode==='add'?'Add Material':'Edit Material'
+  document.getElementById('mm-id').value=d.id||''; document.getElementById('mm-code').value=d.code||''
+  document.getElementById('mm-name').value=d.name||''; document.getElementById('mm-type').value=d.type||'board'
+  document.getElementById('mm-gmin').value=d.gsm_min||''; document.getElementById('mm-gmax').value=d.gsm_max||''
+  document.getElementById('mm-sup').value=d.supplier||''; document.getElementById('mm-unit').value=d.unit||'kg'
+  document.getElementById('mm-notes').value=d.notes||''; O('mo-mat')
+}
+async function editMat(id){const{data}=await db.from('materials').select('*').eq('id',id).single();openMat('edit',data)}
+async function saveMat(){
+  const id=g('mm-id')
+  const p={code:g('mm-code'),name:g('mm-name'),type:g('mm-type'),gsm_min:parseInt(g('mm-gmin'))||null,gsm_max:parseInt(g('mm-gmax'))||null,supplier:g('mm-sup'),unit:g('mm-unit'),notes:g('mm-notes')}
+  if(!p.code||!p.name){toast('Code and Name required','error');return}
+  const{error}=id?await db.from('materials').update(p).eq('id',id):await db.from('materials').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Material updated':'Material added'); X('mo-mat'); loadMat()
+}
+
+// ── MDL 05 PRINT ──────────────────────────────────────────────
+async function loadPrint(){
+  const{data}=await db.from('print_methods').select('*').order('code')
+  const tb=document.getElementById('tb-pr')
+  if(!data||!data.length){tb.innerHTML=eE('Run schema SQL to seed',5);return}
+  tb.innerHTML=data.map(r=>`<tr><td class="mono">${r.code}</td><td><strong>${r.name}</strong></td><td><span class="badge badge-muted">${r.category||'—'}</span></td><td>${r.max_colors||'—'}</td><td>${sb(r.is_active)}</td></tr>`).join('')
+}
+
+// ── MDL 06 FINISHING ──────────────────────────────────────────
+async function loadFin(){
+  const{data}=await db.from('finishing_processes').select('*').order('code')
+  const tb=document.getElementById('tb-fn')
+  if(!data||!data.length){tb.innerHTML=eE('Run schema SQL to seed',4);return}
+  tb.innerHTML=data.map(r=>`<tr><td class="mono">${r.code}</td><td><strong>${r.name}</strong></td><td><span class="badge badge-muted">${r.category||'—'}</span></td><td>${sb(r.is_active)}</td></tr>`).join('')
+}
+
+// ── MDL 07 FABRICATION ────────────────────────────────────────
+async function loadFab(){
+  const{data}=await db.from('fabrication_styles').select('*').order('code')
+  const tb=document.getElementById('tb-fb')
+  if(!data||!data.length){tb.innerHTML=eE('Run schema SQL to seed',4);return}
+  tb.innerHTML=data.map(r=>`<tr><td class="mono">${r.code}</td><td><strong>${r.name}</strong></td><td>${r.applicable_to||'—'}</td><td>${sb(r.is_active)}</td></tr>`).join('')
+}
+
+// ── MDL 08 TOOLING ────────────────────────────────────────────
+async function loadTooling(){
+  const{data,error}=await db.from('tooling').select('*, clients(name), base_skus(name)').order('serial_code')
+  const tb=document.getElementById('tb-tl')
+  if(error){tb.innerHTML=eR(error,8);return}
+  if(!data.length){tb.innerHTML=eE('No tools yet.',8);return}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td class="mono">${r.serial_code}</td><td><span class="badge badge-muted">${r.tool_type}</span></td>
+    <td>${r.clients?.name||'—'}</td><td>${r.base_skus?.name||'—'}</td>
+    <td>${r.size||'—'}</td><td>${sb(r.condition)}</td><td>${r.location||'—'}</td>
+    <td>${acts('editTool',r.id,'tooling')}</td>
+  </tr>`).join('')
+}
+async function openTool(mode,d={}){
+  const skus=(await db.from('base_skus').select('id,name').order('name')).data||[]
+  fillS('mtl-client',CC,'id','name',d.client_id||''); fillS('mtl-sku',skus,'id','name',d.base_sku_id||'')
+  document.getElementById('mtl-t').textContent=mode==='add'?'Add Tool':'Edit Tool'
+  document.getElementById('mtl-id').value=d.id||''; document.getElementById('mtl-serial').value=d.serial_code||''
+  document.getElementById('mtl-type').value=d.tool_type||'plate'; document.getElementById('mtl-size').value=d.size||''
+  document.getElementById('mtl-cond').value=d.condition||'good'; document.getElementById('mtl-colors').value=d.colors||''
+  document.getElementById('mtl-loc').value=d.location||''; document.getElementById('mtl-notes').value=d.notes||''
+  O('mo-tool')
+}
+async function editTool(id){const{data}=await db.from('tooling').select('*').eq('id',id).single();openTool('edit',data)}
+async function saveTool(){
+  const id=g('mtl-id')
+  const p={serial_code:g('mtl-serial'),tool_type:g('mtl-type'),client_id:g('mtl-client')||null,base_sku_id:g('mtl-sku')||null,size:g('mtl-size'),condition:g('mtl-cond'),colors:parseInt(g('mtl-colors'))||null,location:g('mtl-loc'),notes:g('mtl-notes')}
+  if(!p.serial_code){toast('Serial code required','error');return}
+  const{error}=id?await db.from('tooling').update(p).eq('id',id):await db.from('tooling').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Tool updated':'Tool added'); X('mo-tool'); loadTooling()
+}
+
+// ── MDL 09 ARTWORK ────────────────────────────────────────────
+async function loadArtwork(){
+  const{data,error}=await db.from('artwork').select('*, clients(name), base_skus(name)').order('code')
+  const tb=document.getElementById('tb-ar')
+  if(error){tb.innerHTML=eR(error,7);return}
+  if(!data.length){tb.innerHTML=eE('No artwork yet.',7);return}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td class="mono">${r.code}</td><td>${r.file_name}</td>
+    <td><span class="badge badge-muted">${r.version}</span></td>
+    <td>${r.clients?.name||'—'}</td><td>${r.base_skus?.name||'—'}</td>
+    <td>${sb(r.status)}</td><td>${acts('editArt',r.id,'artwork')}</td>
+  </tr>`).join('')
+}
+async function openArt(mode,d={}){
+  const skus=(await db.from('base_skus').select('id,name').order('name')).data||[]
+  fillS('ma-client',CC,'id','name',d.client_id||''); fillS('ma-sku',skus,'id','name',d.base_sku_id||'')
+  document.getElementById('ma-t').textContent=mode==='add'?'Add Artwork':'Edit Artwork'
+  document.getElementById('ma-id').value=d.id||''; document.getElementById('ma-code').value=d.code||''
+  document.getElementById('ma-ver').value=d.version||'v1'; document.getElementById('ma-file').value=d.file_name||''
+  document.getElementById('ma-status').value=d.status||'pending'; document.getElementById('ma-apby').value=d.approved_by||''
+  document.getElementById('ma-apdt').value=d.approved_date||''; document.getElementById('ma-path').value=d.file_path||''
+  O('mo-art')
+}
+async function editArt(id){const{data}=await db.from('artwork').select('*').eq('id',id).single();openArt('edit',data)}
+async function saveArt(){
+  const id=g('ma-id')
+  const p={code:g('ma-code'),file_name:g('ma-file'),version:g('ma-ver'),client_id:g('ma-client')||null,base_sku_id:g('ma-sku')||null,status:g('ma-status'),approved_by:g('ma-apby'),approved_date:g('ma-apdt')||null,file_path:g('ma-path')}
+  if(!p.code||!p.file_name){toast('Code and File Name required','error');return}
+  const{error}=id?await db.from('artwork').update(p).eq('id',id):await db.from('artwork').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Artwork updated':'Artwork added'); X('mo-art'); loadArtwork()
+}
+
+// ── MDL 10 SIZES ──────────────────────────────────────────────
+async function loadSizes(){
+  const{data,error}=await db.from('size_standards').select('*').order('code')
+  const tb=document.getElementById('tb-sz')
+  if(error){tb.innerHTML=eR(error,6);return}
+  if(!data.length){tb.innerHTML=eE('No sizes yet.',6);return}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td class="mono">${r.code}</td><td><strong>${r.label}</strong></td>
+    <td>${r.width_mm||'—'}</td><td>${r.height_mm||'—'}</td>
+    <td style="color:var(--muted2);font-size:12px;">${r.notes||'—'}</td>
+    <td>${acts('editSz',r.id,'size_standards')}</td>
+  </tr>`).join('')
+}
+function openSz(mode,d={}){
+  document.getElementById('msz-t').textContent=mode==='add'?'Add Size':'Edit Size'
+  document.getElementById('msz-id').value=d.id||''; document.getElementById('msz-code').value=d.code||''
+  document.getElementById('msz-label').value=d.label||''; document.getElementById('msz-w').value=d.width_mm||''
+  document.getElementById('msz-h').value=d.height_mm||''; document.getElementById('msz-notes').value=d.notes||''
+  O('mo-sz')
+}
+async function editSz(id){const{data}=await db.from('size_standards').select('*').eq('id',id).single();openSz('edit',data)}
+async function saveSz(){
+  const id=g('msz-id')
+  const p={code:g('msz-code'),label:g('msz-label'),width_mm:parseFloat(g('msz-w'))||null,height_mm:parseFloat(g('msz-h'))||null,notes:g('msz-notes')}
+  if(!p.code||!p.label){toast('Code and Label required','error');return}
+  const{error}=id?await db.from('size_standards').update(p).eq('id',id):await db.from('size_standards').insert(p)
+  if(error){toast('Save failed: '+error.message,'error');return}
+  toast(id?'Size updated':'Size added'); X('mo-sz'); loadSizes()
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+async function loadAll(){
+  await testConn()
+  const[c,pt]=await Promise.all([db.from('clients').select('*').order('name'),db.from('product_types').select('*').order('code')])
+  CC=c.data||[]; PC=pt.data||[]
+  await Promise.all([loadClients(),loadPT(),loadSKUs(),loadMat(),loadPrint(),loadFin(),loadFab(),loadTooling(),loadArtwork(),loadSizes()])
+}
+loadAll()
+</script>
+</body>
+</html>
