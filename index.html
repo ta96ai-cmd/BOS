@@ -600,7 +600,7 @@
     </div>
 
     <!-- KPI STRIP -->
-    <div id="m3-kpis" style="display:flex;gap:2px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
       <div class="kpi-card" id="kpi-open-orders"><div class="kpi-num">—</div><div class="kpi-label">Open Orders</div></div>
       <div class="kpi-card" id="kpi-open-jobs"><div class="kpi-num">—</div><div class="kpi-label">Active Jobs</div></div>
       <div class="kpi-card kpi-warn" id="kpi-delayed"><div class="kpi-num">—</div><div class="kpi-label">Delayed Jobs</div></div>
@@ -608,48 +608,48 @@
       <div class="kpi-card" id="kpi-outsourced"><div class="kpi-num">—</div><div class="kpi-label">Outsourced Pending</div></div>
     </div>
 
-    <div class="mod-body" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+    <div class="mod-body" style="display:flex;flex-direction:column;gap:32px;">
 
-      <!-- ACTIVE ORDERS -->
-      <div style="grid-column:1/-1;">
+      <!-- ROW 1 — ACTIVE ORDERS (full width) -->
+      <div>
         <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.1</span><h3 class="sec-title">Active Orders</h3></div></div>
-        <div class="tw"><table class="dt"><thead><tr><th>Order ID</th><th>Client</th><th>Order Date</th><th>Delivery Date</th><th>Priority</th><th>Status</th><th>Jobs</th><th>Delayed</th></tr></thead>
+        <div class="tw"><table class="dt"><thead><tr><th>Order ID</th><th>Client</th><th>Order Date</th><th>Delivery Date</th><th>Priority</th><th>Status</th><th>Jobs</th><th>Flag</th></tr></thead>
         <tbody id="m3-orders"><tr><td colspan="8"><div class="loading">Loading...</div></td></tr></tbody></table></div>
       </div>
 
-      <!-- DEPARTMENT LOAD -->
-      <div>
-        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.2</span><h3 class="sec-title">Department Load</h3></div></div>
-        <div class="tw"><table class="dt"><thead><tr><th>Department</th><th>Active Jobs</th><th>Delayed</th><th>Load</th></tr></thead>
-        <tbody id="m3-depts"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      <!-- ROW 2 — DEPT LOAD + DELAYED JOBS side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.2</span><h3 class="sec-title">Department Load</h3></div></div>
+          <div class="tw"><table class="dt"><thead><tr><th>Department</th><th>Active</th><th>Delayed</th><th>Load Bar</th></tr></thead>
+          <tbody id="m3-depts"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+        </div>
+        <div>
+          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.3</span><h3 class="sec-title">Delayed Jobs</h3></div></div>
+          <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Client</th><th>Due Date</th><th>Days Over</th><th>Status</th></tr></thead>
+          <tbody id="m3-delayed"><tr><td colspan="5"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+        </div>
       </div>
 
-      <!-- DELAYED JOBS -->
-      <div>
-        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.3</span><h3 class="sec-title">Delayed Jobs</h3></div></div>
-        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Client</th><th>Due Date</th><th>Days Over</th><th>Dept</th><th>Status</th></tr></thead>
-        <tbody id="m3-delayed"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      <!-- ROW 3 — OUTSOURCED + JOBS BY STATUS side by side -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+        <div>
+          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.4</span><h3 class="sec-title">Outsourced — Pending Return</h3></div></div>
+          <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Process</th><th>Vendor</th><th>Expected Back</th><th>Days Over</th><th>Status</th></tr></thead>
+          <tbody id="m3-outsourced"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+        </div>
+        <div>
+          <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.5</span><h3 class="sec-title">Jobs by Status</h3></div></div>
+          <div class="tw"><table class="dt"><thead><tr><th>Status</th><th>Count</th></tr></thead>
+          <tbody id="m3-job-status"><tr><td colspan="2"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+        </div>
       </div>
 
-      <!-- OUTSOURCED PENDING -->
-      <div>
-        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.4</span><h3 class="sec-title">Outsourced — Pending Return</h3></div></div>
-        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Process</th><th>Vendor</th><th>Expected Back</th><th>Days Over</th><th>Status</th></tr></thead>
-        <tbody id="m3-outsourced"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
-      </div>
-
-      <!-- JOBS BY STATUS -->
-      <div>
-        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.5</span><h3 class="sec-title">Jobs by Status</h3></div></div>
-        <div class="tw"><table class="dt"><thead><tr><th>Status</th><th>Count</th></tr></thead>
-        <tbody id="m3-job-status"><tr><td colspan="2"><div class="loading">Loading...</div></td></tr></tbody></table></div>
-      </div>
-
-      <!-- RECENT DISPATCHES -->
+      <!-- ROW 4 — RECENT DISPATCHES (full width) -->
       <div>
         <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.6</span><h3 class="sec-title">Recent Dispatches</h3></div></div>
-        <div class="tw"><table class="dt"><thead><tr><th>Dispatch ID</th><th>Client</th><th>Date</th><th>Invoice</th><th>Status</th></tr></thead>
-        <tbody id="m3-dispatches"><tr><td colspan="5"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Dispatch ID</th><th>Client</th><th>Date</th><th>Mode</th><th>Invoice</th><th>Status</th></tr></thead>
+        <tbody id="m3-dispatches"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
       </div>
 
     </div>
@@ -1357,6 +1357,7 @@ async function loadM3Dispatches() {
     <td class="mono">${r.dispatch_id}</td>
     <td>${r.clients?.name||'—'}</td>
     <td>${r.dispatch_date||'—'}</td>
+    <td><span class="badge badge-muted">${r.delivery_mode||'—'}</span></td>
     <td>${r.invoice_number||'—'}</td>
     <td>${stBadge(r.status)}</td>
   </tr>`).join('')
