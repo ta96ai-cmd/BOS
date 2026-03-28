@@ -178,6 +178,12 @@
   .dbn { background: rgba(232,255,71,0.04); border: 1px solid rgba(232,255,71,0.12); padding: 9px 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--muted2); }
   .dbl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase; flex-shrink: 0; }
 
+  /* KPI CARDS */
+  .kpi-card { flex-shrink:0; padding:16px 28px; border-right:1px solid var(--border); min-width:140px; }
+  .kpi-num { font-family:'Bebas Neue',sans-serif; font-size:40px; color:var(--accent); line-height:1; letter-spacing:2px; }
+  .kpi-label { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+  .kpi-warn .kpi-num { color:var(--danger); }
+
   @media(max-width:600px) { .sidebar{display:none;} .mod-body{padding:16px;} .mod-header{padding:16px;} }
 </style>
 </head>
@@ -296,7 +302,7 @@
       <span class="nav-badge nb-live">Live</span>
     </div>
     <div class="nav-item" id="nav-m2" onclick="show('m2')"><span class="nav-num">02</span><span>Operational Workflow</span><span class="nav-badge nb-live">Live</span></div>
-    <div class="nav-item locked" id="nav-m3"><span class="nav-num">03</span><span>Oversight &amp; Intel</span><span class="nav-badge nb-lock">P2</span></div>
+    <div class="nav-item" id="nav-m3" onclick="show('m3')"><span class="nav-num">03</span><span>Oversight &amp; Intel</span><span class="nav-badge nb-live">Live</span></div>
     <div class="nav-item locked" id="nav-m4"><span class="nav-num">04</span><span>People &amp; Accountability</span><span class="nav-badge nb-lock">P3</span></div>
     <div class="nav-item locked" id="nav-m5"><span class="nav-num">05</span><span>Business Functions</span><span class="nav-badge nb-lock">P4</span></div>
     <div class="nav-item locked" id="nav-m6"><span class="nav-num">06</span><span>Strategy &amp; Growth</span><span class="nav-badge nb-lock">P6</span></div>
@@ -583,7 +589,71 @@
       <div class="modal-footer"><button class="btn" onclick="X('mo-route')">Cancel</button><button class="btn btn-primary" onclick="saveRoute()">Save Step</button></div>
     </div>
   </div>
-  <div class="view" id="view-m3"><div class="lock-view"><div class="lock-num">03</div><div class="lock-title">Oversight &amp; Intelligence</div><div class="lock-desc">Locked until Phase 1 is complete and stable.</div></div></div>
+  <!-- MODULE 3 — OVERSIGHT & INTELLIGENCE -->
+  <div class="view" id="view-m3">
+    <div class="mod-header">
+      <div><div class="mod-hl"><span class="mod-tag">M03</span><span class="mod-title">Oversight & Intelligence</span></div><div class="mod-sub">Real-time view of the entire business — updated on load</div></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn" onclick="loadM3()">↻ Refresh</button>
+        <span class="badge badge-green">● Live</span>
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div id="m3-kpis" style="display:flex;gap:2px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
+      <div class="kpi-card" id="kpi-open-orders"><div class="kpi-num">—</div><div class="kpi-label">Open Orders</div></div>
+      <div class="kpi-card" id="kpi-open-jobs"><div class="kpi-num">—</div><div class="kpi-label">Active Jobs</div></div>
+      <div class="kpi-card kpi-warn" id="kpi-delayed"><div class="kpi-num">—</div><div class="kpi-label">Delayed Jobs</div></div>
+      <div class="kpi-card" id="kpi-dispatched"><div class="kpi-num">—</div><div class="kpi-label">Dispatched Today</div></div>
+      <div class="kpi-card" id="kpi-outsourced"><div class="kpi-num">—</div><div class="kpi-label">Outsourced Pending</div></div>
+    </div>
+
+    <div class="mod-body" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+      <!-- ACTIVE ORDERS -->
+      <div style="grid-column:1/-1;">
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.1</span><h3 class="sec-title">Active Orders</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Order ID</th><th>Client</th><th>Order Date</th><th>Delivery Date</th><th>Priority</th><th>Status</th><th>Jobs</th><th>Delayed</th></tr></thead>
+        <tbody id="m3-orders"><tr><td colspan="8"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- DEPARTMENT LOAD -->
+      <div>
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.2</span><h3 class="sec-title">Department Load</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Department</th><th>Active Jobs</th><th>Delayed</th><th>Load</th></tr></thead>
+        <tbody id="m3-depts"><tr><td colspan="4"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- DELAYED JOBS -->
+      <div>
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.3</span><h3 class="sec-title">Delayed Jobs</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Client</th><th>Due Date</th><th>Days Over</th><th>Dept</th><th>Status</th></tr></thead>
+        <tbody id="m3-delayed"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- OUTSOURCED PENDING -->
+      <div>
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.4</span><h3 class="sec-title">Outsourced — Pending Return</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Job ID</th><th>Process</th><th>Vendor</th><th>Expected Back</th><th>Days Over</th><th>Status</th></tr></thead>
+        <tbody id="m3-outsourced"><tr><td colspan="6"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- JOBS BY STATUS -->
+      <div>
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.5</span><h3 class="sec-title">Jobs by Status</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Status</th><th>Count</th></tr></thead>
+        <tbody id="m3-job-status"><tr><td colspan="2"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+      <!-- RECENT DISPATCHES -->
+      <div>
+        <div class="sec-hdr"><div class="sec-ttl"><span class="sec-code">M3.6</span><h3 class="sec-title">Recent Dispatches</h3></div></div>
+        <div class="tw"><table class="dt"><thead><tr><th>Dispatch ID</th><th>Client</th><th>Date</th><th>Invoice</th><th>Status</th></tr></thead>
+        <tbody id="m3-dispatches"><tr><td colspan="5"><div class="loading">Loading...</div></td></tr></tbody></table></div>
+      </div>
+
+    </div>
+  </div>
   <div class="view" id="view-m4"><div class="lock-view"><div class="lock-num">04</div><div class="lock-title">People &amp; Accountability</div><div class="lock-desc">Locked until Phase 1 is stable.</div></div></div>
   <div class="view" id="view-m5"><div class="lock-view"><div class="lock-num">05</div><div class="lock-title">Business Functions</div><div class="lock-desc">Locked until Phase 2 is complete.</div></div></div>
   <div class="view" id="view-m6"><div class="lock-view"><div class="lock-num">06</div><div class="lock-title">Strategy &amp; Growth</div><div class="lock-desc">Locked until Phases 1–4 are all stable.</div></div></div>
@@ -613,6 +683,7 @@ function show(id) {
   const nav = document.getElementById('nav-' + id)
   if (nav) nav.classList.add('active')
   if (id === 'm2') loadM2()
+  if (id === 'm3') loadM3()
 }
 
 function tab(id) {
@@ -1149,6 +1220,146 @@ async function saveDisp() {
   const {error}=id?await db.from('dispatches').update(p).eq('id',id):await db.from('dispatches').insert(p)
   if(error){toast('Save failed: '+error.message,'error');return}
   toast(id?'Dispatch updated':'Dispatch created'); X('mo-disp'); loadDispatches()
+}
+
+// ── MODULE 3 — OVERSIGHT & INTELLIGENCE ──────────────────────
+
+async function loadM3() {
+  await Promise.all([
+    loadM3Orders(),
+    loadM3DeptLoad(),
+    loadM3Delayed(),
+    loadM3Outsourced(),
+    loadM3JobStatus(),
+    loadM3Dispatches(),
+    loadM3KPIs()
+  ])
+}
+
+async function loadM3KPIs() {
+  const [orders, jobs, delayed, dispatched, outsourced] = await Promise.all([
+    db.from('orders').select('id', {count:'exact'}).not('status','in','("closed","dispatched")'),
+    db.from('job_cards').select('id', {count:'exact'}).in('status',['open','in_progress']),
+    db.from('job_cards').select('id', {count:'exact'}).lt('due_date', new Date().toISOString().split('T')[0]).not('status','in','("closed","dispatched")'),
+    db.from('dispatches').select('id', {count:'exact'}).eq('dispatch_date', new Date().toISOString().split('T')[0]),
+    db.from('outsourced_jobs').select('id', {count:'exact'}).in('status',['sent','delayed'])
+  ])
+  document.getElementById('kpi-open-orders').querySelector('.kpi-num').textContent = orders.count ?? '—'
+  document.getElementById('kpi-open-jobs').querySelector('.kpi-num').textContent = jobs.count ?? '—'
+  document.getElementById('kpi-delayed').querySelector('.kpi-num').textContent = delayed.count ?? '—'
+  document.getElementById('kpi-dispatched').querySelector('.kpi-num').textContent = dispatched.count ?? '—'
+  document.getElementById('kpi-outsourced').querySelector('.kpi-num').textContent = outsourced.count ?? '—'
+}
+
+async function loadM3Orders() {
+  const today = new Date().toISOString().split('T')[0]
+  const {data,error} = await db.from('orders').select('*, clients(name), job_cards(id)').not('status','in','("closed")').order('delivery_date')
+  const tb = document.getElementById('m3-orders')
+  if(error){tb.innerHTML=eR(error,8);return}
+  if(!data.length){tb.innerHTML=eE('No active orders.',8);return}
+  tb.innerHTML = data.map(r=>{
+    const delayed = r.delivery_date && r.delivery_date < today && !['closed','dispatched'].includes(r.status)
+    return `<tr style="${delayed?'background:rgba(248,113,113,0.04);':''}">
+      <td class="mono">${r.order_id}</td>
+      <td>${r.clients?.name||'—'}</td>
+      <td>${r.order_date||'—'}</td>
+      <td style="${delayed?'color:var(--danger);font-weight:600;':''}">${r.delivery_date||'—'}</td>
+      <td>${priBadge(r.priority)}</td>
+      <td>${stBadge(r.status)}</td>
+      <td><span class="badge badge-muted">${r.job_cards?.length||0} jobs</span></td>
+      <td>${delayed?'<span class="badge badge-danger">⚠ Delayed</span>':'<span class="badge badge-green">On Track</span>'}</td>
+    </tr>`
+  }).join('')
+}
+
+async function loadM3DeptLoad() {
+  const {data,error} = await db.from('job_cards').select('current_dept, due_date, status').in('status',['open','in_progress']).not('current_dept','is',null)
+  const tb = document.getElementById('m3-depts')
+  if(error){tb.innerHTML=eR(error,4);return}
+  if(!data.length){tb.innerHTML=eE('No active jobs in production.',4);return}
+  const today = new Date().toISOString().split('T')[0]
+  const deptMap = {}
+  data.forEach(r=>{
+    if(!deptMap[r.current_dept]) deptMap[r.current_dept]={total:0,delayed:0}
+    deptMap[r.current_dept].total++
+    if(r.due_date && r.due_date < today) deptMap[r.current_dept].delayed++
+  })
+  const max = Math.max(...Object.values(deptMap).map(d=>d.total))
+  tb.innerHTML = Object.entries(deptMap).sort((a,b)=>b[1].total-a[1].total).map(([dept,d])=>{
+    const pct = Math.round((d.total/max)*100)
+    return `<tr>
+      <td><strong>${dept}</strong></td>
+      <td><span class="badge badge-accent">${d.total}</span></td>
+      <td>${d.delayed>0?`<span class="badge badge-danger">${d.delayed}</span>`:'<span class="badge badge-green">0</span>'}</td>
+      <td><div style="background:var(--border);height:6px;border-radius:2px;width:120px;"><div style="background:var(--accent);height:100%;width:${pct}%;border-radius:2px;"></div></div></td>
+    </tr>`
+  }).join('')
+}
+
+async function loadM3Delayed() {
+  const today = new Date().toISOString().split('T')[0]
+  const {data,error} = await db.from('job_cards').select('*, clients(name), base_skus(name), orders(order_id)').lt('due_date',today).not('status','in','("closed","dispatched")').order('due_date')
+  const tb = document.getElementById('m3-delayed')
+  if(error){tb.innerHTML=eR(error,6);return}
+  if(!data.length){tb.innerHTML=eE('✓ No delayed jobs.',6);return}
+  tb.innerHTML = data.map(r=>{
+    const overdue = Math.floor((new Date(today)-new Date(r.due_date))/(1000*60*60*24))
+    return `<tr style="background:rgba(248,113,113,0.04);">
+      <td class="mono">${r.job_id}</td>
+      <td>${r.clients?.name||'—'}</td>
+      <td style="color:var(--danger);font-weight:600;">${r.due_date}</td>
+      <td><span class="badge badge-danger">${overdue}d</span></td>
+      <td>${r.current_dept?`<span class="badge badge-muted">${r.current_dept}</span>`:'—'}</td>
+      <td>${stBadge(r.status)}</td>
+    </tr>`
+  }).join('')
+}
+
+async function loadM3Outsourced() {
+  const today = new Date().toISOString().split('T')[0]
+  const {data,error} = await db.from('outsourced_jobs').select('*, job_cards(job_id, clients(name))').in('status',['sent','delayed']).order('expected_back')
+  const tb = document.getElementById('m3-outsourced')
+  if(error){tb.innerHTML=eR(error,6);return}
+  if(!data.length){tb.innerHTML=eE('✓ No outsourced jobs pending.',6);return}
+  tb.innerHTML = data.map(r=>{
+    const overdue = r.expected_back && r.expected_back < today ? Math.floor((new Date(today)-new Date(r.expected_back))/(1000*60*60*24)) : 0
+    return `<tr style="${overdue>0?'background:rgba(248,113,113,0.04);':''}">
+      <td class="mono">${r.job_cards?.job_id||'—'}</td>
+      <td>${r.process}</td>
+      <td>${r.vendor}</td>
+      <td style="${overdue>0?'color:var(--danger);font-weight:600;':''}">${r.expected_back||'—'}</td>
+      <td>${overdue>0?`<span class="badge badge-danger">${overdue}d late</span>`:'<span class="badge badge-green">On Time</span>'}</td>
+      <td>${stBadge(r.status)}</td>
+    </tr>`
+  }).join('')
+}
+
+async function loadM3JobStatus() {
+  const {data,error} = await db.from('job_cards').select('status')
+  const tb = document.getElementById('m3-job-status')
+  if(error){tb.innerHTML=eR(error,2);return}
+  if(!data.length){tb.innerHTML=eE('No jobs yet.',2);return}
+  const counts = {}
+  data.forEach(r=>{ counts[r.status]=(counts[r.status]||0)+1 })
+  const order = ['open','in_progress','ready','dispatched','on_hold','closed']
+  tb.innerHTML = order.filter(s=>counts[s]).map(s=>`<tr>
+    <td>${stBadge(s)}</td>
+    <td><strong>${counts[s]}</strong></td>
+  </tr>`).join('')
+}
+
+async function loadM3Dispatches() {
+  const {data,error} = await db.from('dispatches').select('*, clients(name)').order('dispatch_date',{ascending:false}).limit(10)
+  const tb = document.getElementById('m3-dispatches')
+  if(error){tb.innerHTML=eR(error,5);return}
+  if(!data.length){tb.innerHTML=eE('No dispatches yet.',5);return}
+  tb.innerHTML = data.map(r=>`<tr>
+    <td class="mono">${r.dispatch_id}</td>
+    <td>${r.clients?.name||'—'}</td>
+    <td>${r.dispatch_date||'—'}</td>
+    <td>${r.invoice_number||'—'}</td>
+    <td>${stBadge(r.status)}</td>
+  </tr>`).join('')
 }
 
 // ── INIT ──────────────────────────────────────────────────────
